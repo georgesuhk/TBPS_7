@@ -4,7 +4,7 @@ import pandas as pd
 
 
 def load_data(path: str):
-    return pd.read_csv('TBPS - Spring 2023/'+path)
+    return pd.read_csv('../Data/'+path)
 
 def filter_prob(x: str, y:str, thres: float, df):
     return df[df[x+'_ProbNN'+y] >= thres]
