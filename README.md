@@ -3,3 +3,5 @@
 Github is the easiest way to collaborate on computational and coding project, as well as manage different versions of a project.
 
 The repository is still being set up. 
+
+papers dir = physics papers on the subject
