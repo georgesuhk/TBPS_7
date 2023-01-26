@@ -102,10 +102,15 @@ def filter_dataset(data):
 
 
 def main():
-    
+    feature_ls = ['mu_plus_ProbNNmu', 'mu_minus_ProbNNmu', 'K_ProbNNk', 'Pi_ProbNNpi',
+        'mu_plus_IPCHI2_OWNPV', 'mu_minus_IPCHI2_OWNPV', 'K_IPCHI2_OWNPV', 'Pi_IPCHI2_OWNPV',
+        'B0_IPCHI2_OWNPV', 'B0_M', 'B0_M', 'B0_DIRA_OWNPV', 'B0_FDCHI2_OWNPV',
+        'Kstar_M', 'Kstar_FDCHI2_OWNPV',
+        'J_psi_M'
+    ]
     files = os.listdir('./data/')
     list_of_ratios = [filter_dataset(load_file(file_name)) for file_name in tqdm(files)]
-    pd.DataFrame.from_dict(dict(zip(files, list_of_ratios))).to_csv('filter_statistics.csv')
+    pd.DataFrame(list_of_ratios, columns = feature_ls, index = files).to_csv('filter_statistics.csv')
 
     
 
