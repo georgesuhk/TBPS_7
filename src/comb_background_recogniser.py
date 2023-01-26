@@ -1,7 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-from xgboost import XGBClassifier
+from xgboost import XGBClassifier, DMatrix
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from featurewiz import featurewiz
@@ -53,17 +53,17 @@ if __name__ == "__main__":
     plt.hist(masses, bins=int(5e2))
     plt.show()
 
-    # make a combined data frame with the signal and background 
+    # make a combined data frame with the signal and background
     # Note: join="inner" is a command which deletes non-mutual columns
     df = pd.concat([background, signal], join="inner", ignore_index=True)
     df.astype(np.float32)  # convert to 32 bit for RAM purposes
     del signal, background # free up some RAM
 
-    # pop off tags before ANOVA analysis
+    # pop off tags before ANOVA/SULOV analysis
     is_background = df.pop("is_background")
 
-    # Identify important features with ANOVA
-    features, train_m = featurewiz(df, target="B0_M", corr_limit=0.7, 
+    # Identify important features with ANOVA/SULOV
+    features, train_m = featurewiz(df, target="B0_M", corr_limit=0.7,
                                    verbose=2)
     reduced_df = df[features]  # delete redundant features
 
@@ -87,3 +87,5 @@ if __name__ == "__main__":
 
     # Save model
     model.save_model("comb_background_identifier.json")
+
+
