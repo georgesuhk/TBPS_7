@@ -28,11 +28,14 @@ def filter_B0(IPCHI2_OWNPV_thres: float, B0_M_thres_low: float, B0_M_thres_high:
     ]
 
 def filter_kstar0(Kstar_M_thres: float, vertexchi2_thres: float, FDCHI2_OWNPV_thres: float, df):
+    dof = 4
     return df[
         df['Kstar_M'] < Kstar_M_thres and
-        df['Kstar_ENDVERTEX_CHI2'] < vertexchi2_thres and
-        df['']
+        df['Kstar_ENDVERTEX_CHI2']/dof < vertexchi2_thres and
+        df['Kstar_FDCHI2_OWNPV'] > FDCHI2_OWNPV_thres
     ]
+
+def filter_jpsi()
 
 
 def main():
