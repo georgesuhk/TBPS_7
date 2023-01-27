@@ -8,17 +8,29 @@ Created on Fri Jan 27 12:29:45 2023
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-
+import iminuit
 
 #remember to have the correct path for this part
+#currently accessing toy data
 files = [f'toy_data_bin_{i}.csv' for i in range(7)]
 bins = [pd.read_csv(file) for file in files]
 
-bins[0].head()
 
-def projection_ctk(cos_theta_k, fl):
+
+#Probability distributions across angles
+
+
+def projection_ctk(cos_theta_k, afb, fl, s3, s9):
     '''
-    Returns the projection of the pdf onto cos(theta_k) 
+    The projection of the pdf onto cos(theta_k) 
+    
+    Only parameters relevant to the function are listed in the docstring;
+    this is for a general log-likelihood function
+    
+        cos_theta_k: cos(theta_l)
+        fl: f_l observable
+    
+    Returns: d2gamma_P/dq^2dcos(theta_k)
     '''
     acceptance = 0.5 # placeholder acceptance!!!
     scalar_array = (3/4) * ((1-fl)*(1-cos_theta_k**2) + 2 * fl * cos_theta_k**2) * acceptance
@@ -26,13 +38,18 @@ def projection_ctk(cos_theta_k, fl):
     return normalized_scalar_array
 
 
-def projection_ctl(cos_theta_l, fl, afb):
+def projection_ctl(cos_theta_l, afb, fl, s3, s9):
     """
-    Returns the projection of the pdf onto cos(theta_l)#
-    :cos_theta_l: cos(theta_l)
-    :param fl: f_l observable
-    :param afb: a_fb observable
-    :return:
+    The projection of the pdf onto cos(theta_l)
+    
+    Only parameters relevant to the function are listed in the docstring;
+    this is for a general log-likelihood function
+    Parameters:
+        cos_theta_l: cos(theta_l)
+        fl: f_l observable
+        afb: a_fb observable
+    
+    Returns: d2gamma_P/dq^2dcos(theta_l)
     """
     ctl = cos_theta_l
     c2tl = 2 * ctl ** 2 - 1
@@ -41,28 +58,99 @@ def projection_ctl(cos_theta_l, fl, afb):
     normalized_scalar_array = scalar_array * 2  # normalising scalar array to account for the non-unity acceptance function
     return normalized_scalar_array
 
-def projection_phi(phi, s3, s9, fl):
+def projection_phi(phi, afb, fl, s3, s9):
     '''
-    Returns the projection of the pdf onto cos(theta_k)
-    :phi: phi
-    :param s3: S_3 observable
-    :param s9: S_9 observable
+    The projection of the pdf onto cos(theta_k)
+    
+    Only parameters relevant to the function are listed in the docstring;
+    this is for a general log-likelihood function
+        phi: phi
+        s3: S_3 observable
+        s9: S_9 observable
+    
+    Returns: d2gamma_P/dq^2dPhi
     '''
     acceptance = 0.5 # placeholder acceptance!!!
     scalar_array = (1/np.pi) * (1 + s3*np.cos(phi)**2 + s9*np.sin(phi)**2) * acceptance
     normalized_scalar_array = scalar_array / np.sum(scalar_array) # normalizes the pdf
     return normalized_scalar_array
 
-def log_likelihood(pdf, fl, afb, _bin):
+
+#log-likelihood function to be minimized
+
+def log_likelihood(pdf, afb, fl, s3, s9, _bin):
     """
-    Returns the negative log-likelihood of the pdf defined above
-    :param fl: f_l observable
-    :param afb: a_fb observable
-    :param _bin: number of the bin to fit
-    :return:
+    The negative log-likelihood of the probability distributions defined above
+    
+    Parameters:
+        pdf (func): the probability density function object to be used in the fit
+        fl (float): f_l observable
+        afb (float): a_fb observable
+        s3 (flaot): s3 observable
+        s9 (float): s9 observable
+        _bin (int): number of the bin to fit
+    
+    Returns: log likelihood of fitted function
     """
     _bin = bins[int(_bin)]
-    ctl = _bin['ctl']
-    normalized_scalar_array = pdf(fl=fl, afb=afb, cos_theta_l=ctl)
+    
+    if pdf == projection_ctl:
+        angular_data = _bin['ctl']
+    elif pdf == projection_ctk:
+        angular_data = _bin['ctk']
+    elif pdf == projection_phi:
+        angular_data = _bin['phi']
+    
+    normalized_scalar_array = pdf(angular_data, fl=fl, afb=afb, s3=s3, s9=s9)
     return - np.sum(np.log(normalized_scalar_array))
+
+
+# function for minimizing the log likelihood
+
+def minimize_logL_projection(pdf, _bin, afb=0, fl=0, s3=0, s9=0):
+    '''
+    Uses the iminuit library to minimize the negated log-likelihood function
+    for a projected angular probability density function
+
+    Parameters:
+        pdf: the probability density function used for the fit
+        _bin: which q^2 bin to fit the observable values for
+        starting_vals: an initial guess of the observable parameters, in the same positional order as for the function
+    
+    Returns: minimized iminuit.Minuit object
+    '''
+    
+    if type(pdf) != type(projection_ctl):
+        raise TypeError('pdf must be a function object')
+        
+        
+    elif pdf == projection_ctl:
+        min_func = lambda afb, fl:log_likelihood(pdf, afb=afb, fl=fl, s3=0, s9=0, _bin=_bin) # uses a placeholder lambda function of log-likelihood so that the minimizer only minimizes wrt correct observables 
+        min_func.errordef = iminuit.Minuit.LIKELIHOOD
+        m = iminuit.Minuit(min_func, afb=afb, fl=fl)
+        m.limits=((-1, 1), (-1, 1)) # this is for the toy data from the Jupyter Notebook
+
+    
+    elif pdf == projection_ctk:
+        min_func = lambda fl:log_likelihood(pdf, afb=0, fl=fl, s3=0, s9=0, _bin=_bin)
+        min_func.errordef = iminuit.Minuit.LIKELIHOOD
+        m = iminuit.Minuit(min_func, fl=fl)
+    
+    elif pdf == projection_phi:
+        min_func = lambda s3, s9:log_likelihood(pdf, afb=0, fl=fl, s3=s3, s9=s9, _bin=_bin)
+        min_func.errordef = iminuit.Minuit.LIKELIHOOD
+        m = iminuit.Minuit(min_func, s3=s3, s9=s9)
+        #todo: find good boundaries on s3 and s9 for the values returned to make sense
+        # maybe try a contour plot
+    
+    else:
+        raise NotImplementedError('This pdf is not yet defined')
+        
+        
+    m.migrad()
+    m.hesse()
+    return m
+
+
+
 
