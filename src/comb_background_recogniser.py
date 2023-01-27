@@ -57,6 +57,14 @@ if __name__ == "__main__":
     # Note: join="inner" is a command which deletes non-mutual columns
     df = pd.concat([background, signal], join="inner", ignore_index=True)
     df.astype(np.float32)  # convert to 32 bit for RAM purposes
+    """
+    # Specifically count the peaking files as non-background
+    for file in PEAKING:
+        df_temp = load_path(file)
+        df_temp["is_background"] = 0
+        df = pd.concat([df, df_temp], join="inner", ignore_index=True)
+    """
+
     del signal, background # free up some RAM
 
     # pop off tags before ANOVA/SULOV analysis
