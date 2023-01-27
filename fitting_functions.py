@@ -28,10 +28,10 @@ def projection_ctk(cos_theta_k, fl):
 
 def projection_ctl(cos_theta_l, fl, afb):
     """
-    Returns the projection of the pdf onto cos(theta_l)
+    Returns the projection of the pdf onto cos(theta_l)#
+    :cos_theta_l: cos(theta_l)
     :param fl: f_l observable
     :param afb: a_fb observable
-    :param cos_theta_l: cos(theta_l)
     :return:
     """
     ctl = cos_theta_l
@@ -41,16 +41,19 @@ def projection_ctl(cos_theta_l, fl, afb):
     normalized_scalar_array = scalar_array * 2  # normalising scalar array to account for the non-unity acceptance function
     return normalized_scalar_array
 
-def projection_ctk(phi, s3, s9, fl):
+def projection_phi(phi, s3, s9, fl):
     '''
-    Returns the projection of the pdf onto cos(theta_k) 
+    Returns the projection of the pdf onto cos(theta_k)
+    :phi: phi
+    :param s3: S_3 observable
+    :param s9: S_9 observable
     '''
     acceptance = 0.5 # placeholder acceptance!!!
     scalar_array = (1/np.pi) * (1 + s3*np.cos(phi)**2 + s9*np.sin(phi)**2) * acceptance
     normalized_scalar_array = scalar_array / np.sum(scalar_array) # normalizes the pdf
     return normalized_scalar_array
 
-def log_likelihood(func, fl, afb, _bin):
+def log_likelihood(pdf, fl, afb, _bin):
     """
     Returns the negative log-likelihood of the pdf defined above
     :param fl: f_l observable
@@ -60,6 +63,6 @@ def log_likelihood(func, fl, afb, _bin):
     """
     _bin = bins[int(_bin)]
     ctl = _bin['ctl']
-    normalized_scalar_array = func(fl=fl, afb=afb, cos_theta_l=ctl)
+    normalized_scalar_array = pdf(fl=fl, afb=afb, cos_theta_l=ctl)
     return - np.sum(np.log(normalized_scalar_array))
 
