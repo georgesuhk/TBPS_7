@@ -7,7 +7,6 @@ Created on Fri Jan 27 12:29:45 2023
 
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import iminuit
 
 data_path = 'C:/Users/victo/ic-teach-kstmumu-public/kstarmumu_toy_data/'
@@ -21,7 +20,8 @@ bins = [pd.read_csv(file) for file in files]
 #Functions defined for fitting
 
 
-def projection_ctk(cos_theta_k, afb=0, fl=0, s3=0, s9=0):
+    
+def pdf_ctk(cos_theta_k, afb=0, fl=0, s3=0, s9=0):
     '''
     The projection of the pdf onto cos(theta_k) 
     
@@ -35,11 +35,11 @@ def projection_ctk(cos_theta_k, afb=0, fl=0, s3=0, s9=0):
     '''
     acceptance = 0.5 # placeholder acceptance!!!
     scalar_array = (3/4) * ((1-fl)*(1-cos_theta_k**2) + 2 * fl * cos_theta_k**2) * acceptance
-    normalized_scalar_array = scalar_array / np.sum(scalar_array) # normalizes the pdf
+    normalized_scalar_array = scalar_array *2 # normalizes the pdf
     return normalized_scalar_array
 
 
-def projection_ctl(cos_theta_l, afb=0, fl=0, s3=0, s9=0):
+def pdf_ctl(cos_theta_l, afb=0, fl=0, s3=0, s9=0):
     """
     The projection of the pdf onto cos(theta_l)
     
@@ -56,10 +56,10 @@ def projection_ctl(cos_theta_l, afb=0, fl=0, s3=0, s9=0):
     c2tl = 2 * ctl ** 2 - 1
     acceptance = 0.5  # acceptance "function"
     scalar_array = 3/8 * (3/2 - 1/2 * fl + 1/2 * c2tl * (1 - 3 * fl) + 8/3 * afb * ctl) * acceptance
-    normalized_scalar_array = scalar_array * 2  # normalising scalar array to account for the non-unity acceptance function
+    normalized_scalar_array = scalar_array * 2 # normalising scalar array to account for the non-unity acceptance function
     return normalized_scalar_array
 
-def projection_phi(phi, afb=0, fl=0, s3=0, s9=0):
+def pdf_phi(phi, afb=0, fl=0, s3=0, s9=0):
     '''
     The projection of the pdf onto Phi
     
@@ -73,8 +73,8 @@ def projection_phi(phi, afb=0, fl=0, s3=0, s9=0):
     Returns: d2gamma_P/dq^2dPhi
     '''
     acceptance = 0.5 # placeholder acceptance!!!
-    scalar_array = (1/np.pi) * (1 + s3*np.cos(phi)**2 + s9*np.sin(phi)**2) * acceptance
-    normalized_scalar_array = scalar_array / np.sum(scalar_array) # normalizes the pdf
+    scalar_array = (1/np.pi) * (1 + s3*(2 * np.cos(phi)**2 - 1) + s9*2*np.sin(phi)*np.cos(phi)) * acceptance
+    normalized_scalar_array = scalar_array * 2 # normalizes the pdf
     return normalized_scalar_array
 
 
@@ -127,14 +127,13 @@ def log_likelihood(pdf, afb=0, fl=0, s3=0, s9=0, _bin=0):
     
     Returns: log likelihood of fitted function
     """
-    _bin = bins[int(_bin)]
     
-    if pdf == projection_ctl:
-        angular_data = _bin['ctl']
-    elif pdf == projection_ctk:
-        angular_data = _bin['ctk']
-    elif pdf == projection_phi:
-        angular_data = _bin['phi']
+    if pdf == pdf_ctl:
+        angular_data = bins[_bin]['ctl']
+    elif pdf == pdf_ctk:
+        angular_data = bins[_bin]['ctk']
+    elif pdf == pdf_phi:
+        angular_data = bins[_bin]['phi']
     
     normalized_scalar_array = pdf(angular_data, fl=fl, afb=afb, s3=s3, s9=s9)
     return - np.sum(np.log(normalized_scalar_array))
@@ -142,7 +141,7 @@ def log_likelihood(pdf, afb=0, fl=0, s3=0, s9=0, _bin=0):
 
 # function for minimizing the log likelihood
 
-def minimize_logL_projection(pdf, _bin, afb=0, fl=0, s3=0, s9=0):
+def minimize_logL(pdf, _bin, afb=0, fl=0, s3=0, s9=0):
     '''
     Uses the iminuit library to minimize the negated log-likelihood function
     for a projected angular probability density function
@@ -155,23 +154,23 @@ def minimize_logL_projection(pdf, _bin, afb=0, fl=0, s3=0, s9=0):
     Returns: minimized iminuit.Minuit object
     '''
     
-    if type(pdf) != type(projection_ctl):
+    if type(pdf) != type(pdf_ctl):
         raise TypeError('pdf must be a function object')
         
         
-    elif pdf == projection_ctl:
+    elif pdf == pdf_ctl:
         min_func = lambda afb, fl:log_likelihood(pdf, afb=afb, fl=fl, _bin=_bin) # uses a placeholder lambda function of log-likelihood so that the minimizer only minimizes wrt correct observables 
         min_func.errordef = iminuit.Minuit.LIKELIHOOD
         m = iminuit.Minuit(min_func, afb=afb, fl=fl)
-        m.limits=((-1, 1), (-1, 1)) # this is for the toy data from the Jupyter Notebook
+        m.limits=((-1, 1), (-1, .9)) # these limits are good for the Jupyter Notebook data - however they have an effect on convergence and may need to be changed
 
     
-    elif pdf == projection_ctk:
+    elif pdf == pdf_ctk:
         min_func = lambda fl:log_likelihood(pdf, fl=fl, _bin=_bin)
         min_func.errordef = iminuit.Minuit.LIKELIHOOD
         m = iminuit.Minuit(min_func, fl=fl)
     
-    elif pdf == projection_phi:
+    elif pdf == pdf_phi:
         min_func = lambda s3, s9:log_likelihood(pdf, s3=s3, s9=s9, _bin=_bin)
         min_func.errordef = iminuit.Minuit.LIKELIHOOD
         m = iminuit.Minuit(min_func, s3=s3, s9=s9)
@@ -186,6 +185,51 @@ def minimize_logL_projection(pdf, _bin, afb=0, fl=0, s3=0, s9=0):
     m.hesse()
     return m
 
+
+def toy_data_observables():
+    '''
+    A function to calculate all observables from the projection for the toy data
+    
+    Returns the values of the observables and their errors as two separate arrays
+    The order of the bins is preserved in the array
+    '''
+    values = []
+    errors = []
+    for i, _bin in enumerate(bins):
+        m_ctl = minimize_logL(pdf_ctl, i)
+        m_ctk = minimize_logL(pdf_ctk, i)
+        m_phi = minimize_logL(pdf_phi, i)
+        
+        afb_val = m_ctl.values[0]
+        afb_err = m_ctl.errors[0]
+        fl_ctl_val = m_ctl.values[1]
+        fl_ctl_err = m_ctl.errors[1]
+        
+        fl_ctk_val = m_ctk.values[0]
+        fl_ctk_err = m_ctk.errors[0]
+        
+        s3_val = m_phi.values[0]
+        s3_err = m_phi.errors[0]
+        s9_val = m_phi.values[1]
+        s9_err = m_phi.errors[1]
+        
+        values.append([afb_val, fl_ctl_val, fl_ctk_val, s3_val, s9_val])
+        errors.append([afb_err, fl_ctl_err, fl_ctk_err, s3_err, s9_err])
+    
+    return np.array(values), np.array(errors)
+
+
+
+
+#vals, errs = toy_data_observables()
+#vals = pd.DataFrame(vals)
+#errs = pd.DataFrame(errs)
+
+#labels = np.array(['afb', 'fl_ctl', 'fl_ctk', 's3', 's9'])
+#vals.to_csv('toy_data_observables.csv', header = labels, index = False)
+#vals.to_csv('toy_data_errors.csv', header = labels, index = False)
+        
+        
 
 
 
