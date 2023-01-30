@@ -14,7 +14,6 @@ rcParams.update({'font.size':22})
 
 #some contour visualization functions for visually finding minima
 
-
 def contour_plot(x_range, y_range, func):
     '''
     Produces a contour plot for a function with 2D input and 1D output in the ranges x_range and y_range
@@ -84,9 +83,8 @@ def toy_data_contours(_bin):
     plt.plot(ctks, output)
     
 def toy_data_fits(_bin):
-    '''
-    Fits all projected pdfs to their respective histograms and plots the fitted function for a specified bin
-    '''
+    'Fits all projected pdfs to their respective histograms and plots the fitted function for a specified bin'
+    
     fig, ax = plt.subplots(1, 3)
     
     # minimizing to find the values of the observables
@@ -105,33 +103,39 @@ def toy_data_fits(_bin):
     ctls = fit.bins[_bin]['ctl']
     heights, edges, patches = ax[0].hist(ctls, color = 'xkcd:powder blue')
     centers = 0.5*(edges[1]-edges[0]) + edges[:-1]
-    pdf_x = np.linspace(edges.min(), edges.max(), 50)
-    pdf_y = fit.pdf_ctl(pdf_x, afb = afb, fl = fl_ctl)
-    scale = np.trapz(heights, centers) / np.trapz(pdf_y, pdf_x) # normalize distribution to histogram using numpy numerical integration
+    display_x = np.linspace(edges.min(), edges.max(), 50) # xs to fill range of plot
+    true_x = np.linspace(centers.min(), centers.max(), 50) # xs for calculating area
+    display_y = fit.pdf_ctl(display_x, afb = afb, fl = fl_ctl) # ys to match plotting xs
+    true_y = fit.pdf_ctl(true_x, afb = afb, fl = fl_ctl) # ys to match calculating xs
+    scale = np.trapz(heights, centers) / np.trapz(true_y, true_x) # normalize distribution to histogram using numpy numerical integration
     
-    ax[0].plot(pdf_x, pdf_y*scale, color = 'red', linewidth = 3)
+    ax[0].plot(display_x, display_y*scale, color = 'red', linewidth = 3)
     ax[0].set_xlabel(r'$cos(\theta_l)$')
     ax[0].set_ylabel(r'Candidates')
     
     ctks = fit.bins[_bin]['ctk']
     heights, edges, patches = ax[1].hist(ctks, color = 'xkcd:powder blue')
     centers = 0.5*(edges[1]-edges[0]) + edges[:-1]
-    pdf_x = np.linspace(edges.min(), edges.max(), 50)
-    pdf_y = fit.pdf_ctk(pdf_x, fl = fl_ctk)
-    scale = np.trapz(heights, centers) / np.trapz(pdf_y, pdf_x)
+    display_x = np.linspace(edges.min(), edges.max(), 50) # xs to fill range of plot
+    true_x = np.linspace(centers.min(), centers.max(), 50) # xs for calculating area
+    display_y = fit.pdf_ctk(display_x, fl = fl_ctk) # ys to match plotting xs
+    true_y = fit.pdf_ctk(true_x, fl = fl_ctk) # ys to match calculating xs
+    scale = np.trapz(heights, centers) / np.trapz(true_y, true_x) # normalize distribution to histogram using numpy numerical integration
     
-    ax[1].plot(pdf_x, pdf_y*scale, color = 'red', linewidth = 3)
+    ax[1].plot(display_x, display_y*scale, color = 'red', linewidth = 3)
     ax[1].set_xlabel(r'$cos(\theta_k)$')
     ax[1].set_ylabel(r'Candidates')
     
     phis = fit.bins[_bin]['phi']
     heights, edges, patches = ax[2].hist(phis, color = 'xkcd:powder blue')
     centers = 0.5*(edges[1]-edges[0]) + edges[:-1]
-    pdf_x = np.linspace(edges.min(), edges.max(), 50)
-    pdf_y = fit.pdf_phi(pdf_x, s3=s3, s9=s9)
-    scale = np.trapz(heights, centers) / np.trapz(pdf_y, pdf_x)
+    display_x = np.linspace(edges.min(), edges.max(), 50) # xs to fill range of plot
+    true_x = np.linspace(centers.min(), centers.max(), 50) # xs for calculating area
+    display_y = fit.pdf_phi(display_x, s3 = s3, s9 = s9) # ys to match plotting xs
+    true_y = fit.pdf_phi(true_x, s3 = s3, s9 = s9) # ys to match calculating xs
+    scale = np.trapz(heights, centers) / np.trapz(true_y, true_x) # normalize distribution to histogram using numpy numerical integration
     
-    ax[2].plot(pdf_x, pdf_y*scale, color = 'red', linewidth = 3)
+    ax[2].plot(display_x, display_y*scale, color = 'red', linewidth = 3)
     ax[2].set_xlabel(r'$\phi$')
     ax[2].set_ylabel(r'Candidates')
     

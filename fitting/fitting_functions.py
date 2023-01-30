@@ -79,37 +79,6 @@ def pdf_phi(phi, afb=0, fl=0, s3=0, s9=0):
 
 
     
-from scipy.special import erf
-
-def crystal_ball(x, mean, alpha, n, sigma):
-    '''
-    The 'Crystal Ball' function for the mass distribution
-    
-    Parameters:
-        x : domain of the function
-        mean : mean of the Gaussian
-        alpha : cutoff between power law and Gaussian
-        n : power law exponent
-        sd : standard deviation of the Gaussian
-    Returns: value at x
-    '''
-    
-    A = (n/np.abs(alpha))**n * np.exp(-(np.abs(alpha))**2 / 2)
-    B = (n/np.abs(alpha)) - np.abs(alpha)
-    C = (n/np.abs(alpha)) * (1/(n-1)) * np.exp(-(np.abs(alpha))**2 / 2)
-    D = np.sqrt(np.pi/2) * (1 + erf(np.abs(alpha))/np.sqrt(2))
-    N = 1/(sigma * (C + D))
-    
-    
-    bool_arr = ((x-mean)/sigma > -alpha)
-    gaussian_arr = bool_arr * N * np.exp(-((x-mean)**2)/(2*sigma**2))
-    power_law_arr = (bool_arr == False) * A * (B - (x-mean)/sigma)**(-n)
-    
-    return gaussian_arr + power_law_arr
-    
-    
-def mB_dist(x, mean, alpha1, alpha2, n1, n2, sigma1, sigma2):
-    return crystal_ball(x, mean, alpha1, n1, sigma1) + crystal_ball(x, mean, alpha2, n2, sigma2)   
 
 #log-likelihood function to be minimized
 
@@ -197,8 +166,11 @@ def toy_data_observables():
     errors = []
     for i, _bin in enumerate(bins):
         m_ctl = minimize_logL(pdf_ctl, i)
+        #print(f'ctl minimum is valid: {m_ctl.fmin.is_valid}')
         m_ctk = minimize_logL(pdf_ctk, i)
+        #print(f'ctk minimum is valid: {m_ctk.fmin.is_valid}')
         m_phi = minimize_logL(pdf_phi, i)
+        #print(f'phi minimum is valid: {m_phi.fmin.is_valid}')
         
         afb_val = m_ctl.values[0]
         afb_err = m_ctl.errors[0]
