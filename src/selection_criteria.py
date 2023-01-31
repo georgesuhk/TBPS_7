@@ -33,7 +33,7 @@ def filter_B0(
         df["B0_IPCHI2_OWNPV"] < IPCHI2_OWNPV_thres
         and df["B0_M"] > B0_M_thres_low
         and df["B0_M"] < B0_M_thres_high
-        and df["B0_DIRA_OWNPV"] < DIRA_OWNPV_thres
+        #and df["B0_DIRA_OWNPV"] < DIRA_OWNPV_thres
         and df[  # not quite sure about this one as the criteria in the paper is given in mrad, but data file appears to be a percent
             "B0_FDCHI2_OWNPV"
         ]
@@ -53,7 +53,7 @@ def filter_kstar0(
 
 
 def main():
-    data = load_data("phimumu.csv")
+    data = load_data("total_datasest.csv")
 
     X = ["mu_plus", "mu_minus", "K", "Pi"]
     Y = ["mu", "mu", "k", "pi"]
@@ -71,6 +71,8 @@ def main():
     # B0 filters
     thres = [16, 4850, 5780, 121, "xxx"]  # xxx means i don't understand what goes here
     data = filter_B0(*thres, data)
+    
+    data.to_pickle('total_dataset_filtered.pkl')
 
 
 # %%
