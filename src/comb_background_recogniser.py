@@ -2,8 +2,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from xgboost import XGBClassifier, DMatrix
+from xgboost import cv
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
+from sklearn.model_selection import KFold
 from featurewiz import featurewiz
 
 # Note: Using pickled data speeds up the process considerably
@@ -76,13 +78,27 @@ if __name__ == "__main__":
     reduced_df = df[features]  # delete redundant features
 
     # Split data into train and test sets
-    X_train, X_test, Y_train, Y_test = train_test_split(reduced_df,
-                                                        is_background,
-                                                        test_size=0.2)
+#    X_train, X_test, Y_train, Y_test = train_test_split(reduced_df,
+#                                                        is_background,
+#                                                        test_size=0.25)
 
+    # Define the k-fold cross validation
+    kf = KFold(n_splits=10, shuffle=True)
+    
+    # Train and evaluate the model using k-fold cross validation
+    for train_index,test_index in kf.split(reduced_df):
+        X_train, X_test = reduced_df.iloc[train_index], reduced_df.iloc[test_index]
+        Y_train, Y_test = is_background.iloc[train_index], is_background.iloc[test_index]
+        
+        
+        # Train model
+        model = XGBClassifier(n_estimators=35, learning_rate=0.4)
+        model.fit(X_train, Y_train)
+    
+    
     # Train model
-    model = XGBClassifier(n_estimators=30, learning_rate=0.5)
-    model.fit(X_train, Y_train)
+#    model = XGBClassifier(n_estimators=30, learning_rate=0.5)
+#    model.fit(X_train, Y_train)
 
     # plot the 'importance' of each of the reduced features
     plt.bar(range(len(model.feature_importances_)), model.feature_importances_)
