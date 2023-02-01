@@ -41,7 +41,7 @@ def contour_plot(x_range, y_range, func):
         contours.collections[i].set_label(label)
     plt.legend(title = r'$log(\mathcal{L})$ contour values')
 
-def toy_data_contours(_bin):
+def plot_toy_data_contours(_bin):
     'Creates plots to visualize the minimization of each projected pdf in a specific bin'
     
     # defining new functions to avoid typing later on
@@ -82,7 +82,7 @@ def toy_data_contours(_bin):
     output = np.array([ctk(val) for val in ctks])
     plt.plot(ctks, output)
     
-def toy_data_fits(_bin):
+def plot_toy_data_fits(_bin):
     'Fits all projected pdfs to their respective histograms and plots the fitted function for a specified bin'
     
     fig, ax = plt.subplots(1, 3)
@@ -140,5 +140,25 @@ def toy_data_fits(_bin):
     ax[2].set_ylabel(r'Candidates')
     
     
-    
-    
+def plot_toy_data_observables():
+    'finds the observables for each bin of the toy data set and plots across the bins'
+    vals, errs = fit.toy_data_observables()
+    fig, ax = plt.subplots(2, 4)
+    ax[0][0].set_title(r'$A_{FB}$')
+    ax[0][1].set_title(r'$F_L$')
+    ax[0][2].set_title(r'$S_3$')
+    ax[0][3].set_title(r'$S_4$')
+    ax[1][0].set_title(r'$S_5$')
+    ax[1][1].set_title(r'$S_7$')
+    ax[1][2].set_title(r'$S_8$')
+    ax[1][3].set_title(r'$S_9$')
+
+    for i in range(9):
+        if i == 2:
+            ax[0][1].errorbar(range(len(fit.bins)), vals[:,i], yerr = errs[:,i], fmt = 'x')
+        elif i < 2:
+            ax[0][i].errorbar(range(len(fit.bins)), vals[:,i], yerr = errs[:,i], fmt = 'x')
+            ax[0][i].set_xlabel('Bin number')
+        elif i > 2:
+            ax[int((i-1)/4)][(i-1)%4].errorbar(range(len(fit.bins)), vals[:,i], yerr = errs[:,i], fmt = 'x')
+            ax[int((i-1)/4)][(i-1)%4].set_xlabel('Bin number')
