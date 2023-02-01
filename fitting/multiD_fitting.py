@@ -47,10 +47,10 @@ def full_func(cos_theta_l, cos_theta_k, phi, *params):
     A_fb, F_l, S3, S4, S5, S7, S8, S9 = params
     acceptance = 0.5
     A_fb_term = A_fb * (4/3) * stk2 * ctl
-    Fl_term1 = (3/4) * (1-F_l) * stk2
+    Fl_term1 = (3/4) * (1 - F_l) * stk2
     Fl_term2 = F_l * ctk**2
-    Fl_term3 = (1/4) * (1-F_l) * stk2 * c2tl
-    Fl_term4 =  - F_l * ctk**2 * c2tl
+    Fl_term3 = (1/4) * (1 - F_l) * stk2 * c2tl
+    Fl_term4 =  - F_l * (ctk**2) * c2tl
     S3_term = S3 * stk2 * stl2 * np.cos(2*phi)
     S4_term = S4 * s2tk * s2tl * np.cos(phi)
     S5_term = S5 * s2tk * stl * np.cos(phi)
@@ -61,8 +61,19 @@ def full_func(cos_theta_l, cos_theta_k, phi, *params):
     scalar_array = (9/(32*np.pi)) * (A_fb_term + Fl_term1 + Fl_term2 + Fl_term3 + Fl_term4 + S3_term + S4_term + S5_term + S7_term + S8_term + S9_term)
     scalar_array *= acceptance
     scalar_array *= 2 # normalization after acceptance
+    '''
+    if np.any(scalar_array < 0):
+        bad_ctl = np.array(ctl[scalar_array < 0]).reshape(1, np.sum(scalar_array < 0))
+        bad_ctk = np.array(ctk[scalar_array < 0]).reshape(1, np.sum(scalar_array < 0))
+        bad_phi = np.array(phi[scalar_array < 0]).reshape(1, np.sum(scalar_array < 0))
+        bad_angles = np.append(np.append(bad_ctl, bad_ctk, axis=0), bad_phi, axis = 0)
+        np.savetxt('full_func_err.csv', bad_angles, delimiter = ',')
+        raise ValueError('y\'all need therapy')
+    '''
     
+    scalar_array[scalar_array < 0] = np.exp(scalar_array[scalar_array<0]*50000)
     return scalar_array
+
 
 
 def log_likelihood(_bin, *params):
@@ -101,9 +112,11 @@ def minimize_logL(_bin, initial_guess):
     min_func = lambda *args:log_likelihood(_bin, *args)
     min_func.errordef = iminuit.Minuit.LIKELIHOOD
     m = iminuit.Minuit(min_func, *initial_guess)
-    m.limits = ((-1, 1), (-1, 1), (-1, 1), (-1, 1), (-1, 1), (-1, 1), (-1, 1), (-1, 1))
+    m.limits = [(-1, 1) for i in initial_guess]#[(-.6, .6), (-1, 1), (-.355, .355), (-1, 1), (-1, 1), (-1, 1), (-1, 1), (-.355, .355)]
+    #m.fixed['x0'] = True
     m.migrad()
     m.hesse()
+    
     return m
 
 
