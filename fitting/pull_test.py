@@ -9,7 +9,7 @@ Created on Thu Feb  2 11:18:27 2023
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
-
+import pandas as pd
 def gauss_function(x, a, x0, sigma):
     return a*np.exp(-(x-x0)**2/(2*sigma**2))
 
@@ -30,9 +30,7 @@ def pull_test(expectedT,observedT,observedT_sd,nbins,p0):
     return plt.show()
 #%% examples
 #input data
-import pandas as pd
-tv=pd.read_csv('toy_data_observable_values.csv')
-te=pd.read_csv('toy_data_observable_errors.csv')
+
 expected = np.array([[50, 50, 50, 50, 50, 50, 50, 50, 50, 50],
                      [50, 50, 50, 50, 50, 50, 50, 50, 50, 50],
                      [50, 50, 50, 50, 50, 50, 50, 50, 50, 50]])
