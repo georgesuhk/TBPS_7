@@ -13,8 +13,8 @@ from scipy.optimize import curve_fit
 def gauss_function(x, a, x0, sigma):
     return a*np.exp(-(x-x0)**2/(2*sigma**2))
 
-def pull_test(expected,observed,observed_sd,nbins):
-    pull = ((observed-expected)/observed_sd).flatten()
+def pull_test(expectedT,observedT,observedT_sd,nbins):
+    pull = ((observedT-expectedT)/observedT_sd).flatten()
     n, bins, patches = plt.hist(pull, bins=nbins)
     step = (max(bins)-min(bins))/(2*len(n))
     popt, pcov = curve_fit(gauss_function, bins[:len(n)]+step , n, p0 = [10, 0, 3])
