@@ -7,9 +7,13 @@ from scipy.optimize import curve_fit
 #import data
 data = pd.read_csv('acceptance_mc.csv')
 #%%
-#polynomials to fit
+#polynomials to fit (will revisit to change to Legendre Polynomial)
 n6_polynomial = lambda x, a,b,c,d,e,f,g : a*x**6 + b*x**5 + c*x**4 + d*x**3 + e*x*2 + f*x + g
 n6_polynomial_even = lambda x, a,b,c,d : a*x**6 + b*x**4 + c*x**2 + d
+
+#added by henry
+def q2_binning_sm(data, bin_ranges):
+    return [data[(data['q2'] >= bin_range[0]) & (data['q2'] <= bin_range[1])] for bin_range in bin_ranges.values()]
 
 def q2_binning(data, bin_ranges):
     """Returns a list of pandas data frames. Each data frame has q2 within the range specified by
@@ -164,35 +168,24 @@ def total_efficiency(costhetak, costhetal, phi, q2, q2_ranges, costhetak_popt_ls
 #%%
 data = data.dropna()
 
-bin_ranges = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 0.9, 1.0,
-                1.2,
-                1.4,
-                1.6,
-                1.8,
-                2.0,
-                2.2,
-                2.4,
-                2.6,
-                2.8000000000000003,
-                3.0000000000000004,
-                3.2000000000000006,
-                3.400000000000001,
-                3.600000000000001,
-                3.800000000000001,
-                4.000000000000001,
-                4.200000000000001,
-                4.400000000000001,
-                4.600000000000001,
-                4.800000000000002,
-                5.000000000000002,
-                5.200000000000002,
-                5.400000000000002,
-                5.600000000000002,
-                5.8000000000000025,
-                6.3, 6.8, 7.3, 7.8, 8.3, 8.8, 9.3, 9.8, 10.3, 10.8, 11.3, 11.8, 12.3, 12.8, 13.3, 13.8, 14.3, 14.8, 15.3, 15.8, 16.3, 16.8, 17.3, 17.8, 18.3, 18.8, 19.3, 19.8, 20.3, 20.8]
+bin_ranges = {
+    0: [0.1, 0.98],
+    1: [1.1, 2.5],
+    2: [2.5, 4.0],
+    3: [4.0, 6.0],
+    4: [6.0, 8.0],
+    5: [15.0, 17.0],
+    6: [17.0, 19.0],
+    7: [11.0, 12.5],
+    8: [1.0, 6.0],
+    9: [15.0, 19.0]
+}
 
 #Bin the data according to q2
-bins_ls = q2_binning(data, bin_ranges)
+#bins_ls = q2_binning(data, bin_ranges)
+#using q2_binning added by henry
+bins_ls = q2_binning_sm(df_before, bin_ranges)
+
 #Compute popt lists
 popt_costhetak_ls, popt_costhetal_ls, popt_phi_ls = get_efficiency(bins_ls, bin_ranges, N=100, covariance=False, plotdata=False)
 #%%
