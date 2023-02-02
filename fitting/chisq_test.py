@@ -9,7 +9,7 @@ import scipy.stats as stats
 import numpy as np
 from scipy.stats import chi2
 
-def chisq_1d(expected,observed,rejection_factor):
+def chisq_1d(expected,observed,con_level):
     '''
     perform Chi-Square Goodness of Fit Test
         H0: (null hypothesis) A variable follows a hypothesized distribution.
@@ -17,6 +17,7 @@ def chisq_1d(expected,observed,rejection_factor):
     
         Chi-Square test statistic, and the corresponding p-value
         p correspond to dof = (len(datapoints)-1) = n-1
+        con_level is the confidence level
     '''
     statistic, pvalue = stats.chisquare(f_obs=observed, f_exp=expected)
     if pvalue > rejection_factor:
@@ -24,7 +25,7 @@ def chisq_1d(expected,observed,rejection_factor):
     else:
         return print('p-value=%.5f:',pvalue,' reject the null hypothesis')
 
-def chisq_ds(expected,observed,rejection_factor):
+def chisq_ds(expected,observed,con_level):
     '''
     perform Chi-Square Goodness of Fit Test
         H0: (null hypothesis) A variable follows a hypothesized distribution.
@@ -47,8 +48,8 @@ def chisq_ds(expected,observed,rejection_factor):
 #input data
 expected1d = np.array([50, 50, 50, 50, 50])
 observed1d = np.array([50, 60, 40, 47, 53])
-rejection_factor1d = 0.05
-chisq_1d(expected1d,observed1d,rejection_factor1d)
+con_level1d = 0.95
+chisq_1d(expected1d,observed1d,con_level1d)
 
 #input data
 expected2d = np.array([[50, 50, 50, 50, 50],
@@ -57,5 +58,5 @@ expected2d = np.array([[50, 50, 50, 50, 50],
 observed2d = np.array([[50, 60, 40, 47, 53],
                      [50, 66, 40, 47, 53],
                      [40, 60, 40, 47, 53]])
-rejection_factor2d = 0.05
-chisq_ds(expected2d,observed2d,rejection_factor2d)
+con_level2d = 0.05
+chisq_ds(expected2d,observed2d,con_level2d)
