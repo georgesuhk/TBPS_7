@@ -23,6 +23,8 @@ def pull_test(expected,observed,observed_sd,nbins):
     print(" Sig = %.2f +/- %.2f"%(popt[2],np.sqrt(pcov[2,2])))
     plt.axvline(popt[1],color = 'black',linestyle='--',label=" Mu = %.2f +/- %.2f"%(popt[1],np.sqrt(pcov[1,1])))
     plt.plot(x, gauss_function(x, *popt))
+    plt.xlabel('Pull')
+    plt.ylabel('#')
     plt.title('Pull distribution')
     plt.legend()
     return plt.show()
