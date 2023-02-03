@@ -85,19 +85,29 @@ if __name__ == "__main__":
     # Define the k-fold cross validation
     kf = KFold(n_splits=10, shuffle=True)
     
+    acc_score = []
+    
+    #MODEL
+    model = XGBClassifier(n_estimators=30, learning_rate=0.5)
+    
     # Train and evaluate the model using k-fold cross validation
     for train_index,test_index in kf.split(reduced_df):
         X_train, X_test = reduced_df.iloc[train_index], reduced_df.iloc[test_index]
         Y_train, Y_test = is_background.iloc[train_index], is_background.iloc[test_index]
         
-        
-        # Train model
-        model = XGBClassifier(n_estimators=35, learning_rate=0.4)
+        #fit and predict
         model.fit(X_train, Y_train)
+        pred_values = model.predict(X_test)
+        
+        #accuracy for each of the 10 k-folds
+        acc = accuracy_score(pred_values, Y_test)
+        acc_score.append(acc)
+     
+    #accuracy averaged across the 10 k-folds
+    avg_acc_score = sum(acc_score)/10
     
     
     # Train model
-#    model = XGBClassifier(n_estimators=30, learning_rate=0.5)
 #    model.fit(X_train, Y_train)
 
     # plot the 'importance' of each of the reduced features
@@ -105,9 +115,11 @@ if __name__ == "__main__":
     plt.show()
 
     # Test the accuracy of the model using test datasets
-    Y_pred = model.predict(X_test)
-    accuracy = 100 * accuracy_score(Y_test, Y_pred)
-    print("Accuracy: {:.2f}%".format(accuracy))
+    #Y_pred = model.predict(X_test)
+    #accuracy = 100 * accuracy_score(Y_test, Y_pred)
+    
+    print('Accuracy of each k fold - {}'.format(acc_score))
+    print('Average Accuracy : {}'.format(avg_acc_score))
 
     # Save model
     model.save_model("comb_background_identifier.json")
