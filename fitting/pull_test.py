@@ -15,14 +15,17 @@ def gauss_function(x, a, x0, sigma):
 
 def pull_test(T,mu_T,T_sd,nbins,p0):
     pull = (mu_T-T)/T_sd
-    n, bins, patches = plt.hist(pull, bins=nbins)
+    n, bins, patches = plt.hist(pull, bins=nbins)    
+    nsum=np.sum(n)
+    nerr=((n/nsum)*(1-n/nsum))**0.5
     step = (max(bins)-min(bins))/(2*len(n))
-    popt, pcov = curve_fit(gauss_function, bins[:len(n)]+step , n, p0 = p0)
+    popt, pcov = curve_fit(gauss_function, bins[:len(n)]+step , n, p0 = p0, sigma=nerr)
     x = np.linspace(max(bins),min(bins),num=100)
     print(" Mu = %.2f +/- %.2f"%(popt[1],np.sqrt(pcov[1,1])))
     print(" Sig = %.2f +/- %.2f"%(popt[2],np.sqrt(pcov[2,2])))
     plt.axvline(popt[1],color = 'black',linestyle='--',label=" Mu = %.2f +/- %.2f"%(popt[1],np.sqrt(pcov[1,1])))
     plt.plot(x, gauss_function(x, *popt))
+    plt.errorbar(bins[:len(n)]+step, n, yerr=nerr,fmt='x',color='red',capsize=3)
     plt.xlabel('Pull')
     plt.ylabel('#')
     plt.title('Pull distribution')
