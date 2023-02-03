@@ -18,7 +18,8 @@ data = data.dropna()
 #%%
 maxq2 = max(data['q2'])
 
-def preprocess_jit(bin):
+def preprocess_jit(data):
+    bin = data
     #pre process data for numba
     bin['phi'] = bin['phi']/np.pi
     bin['q2'] = (bin['q2']- maxq2/2)/(maxq2/2)
@@ -111,27 +112,61 @@ def project_1d(var_ls, N, func, func_params, projected_variable='q2'):
     #so instead, we pass the arguments/parameters of the efficiency function as input here
     output_ls = []
 
-    for var in var_ls:
-        integral = 0
-
-        for i in range(0, N):
-            x = np.random.uniform(-1,1)
-            y = np.random.uniform(-1,1)
-            z = np.random.uniform(-1,1)
-            if projected_variable == 'q2':
-                print(integral)
+    if projected_variable == 'q2':
+        for var in var_ls:
+            integral = 0
+            for i in range(0, N):
+                x = np.random.uniform(-1,1)
+                y = np.random.uniform(-1,1)
+                z = np.random.uniform(-1,1)
                 integral += func(x, y, z, var, *func_params)
-            elif projected_variable == 'costhetal':
+            output_ls.append(integral)
+    elif projected_variable == 'costhetal':
+        for var in var_ls:
+            integral = 0
+            for i in range(0, N):
+                x = np.random.uniform(-1,1)
+                y = np.random.uniform(-1,1)
+                z = np.random.uniform(-1,1)
                 integral += func(var, x, y, z, *func_params)
-            elif projected_variable == 'costhetak':
+            output_ls.append(integral)
+    elif projected_variable == 'costhetak':
+        for var in var_ls:
+            integral = 0
+            for i in range(0, N):
+                x = np.random.uniform(-1,1)
+                y = np.random.uniform(-1,1)
+                z = np.random.uniform(-1,1)
                 integral += func(x, var, y, z, *func_params)
-            elif projected_variable == 'phi':
+            output_ls.append(integral)
+    elif projected_variable == 'phi':
+        for var in var_ls:
+            integral = 0
+            for i in range(0, N):
+                x = np.random.uniform(-1,1)
+                y = np.random.uniform(-1,1)
+                z = np.random.uniform(-1,1)
                 integral += func(x, y, var, z, *func_params)
-        
-        output_ls.append(integral/N*2*2*2)
-        print('done.')
+            output_ls.append(integral/N*2*2*2)
 
     return output_ls
+
+def relative_histogram_generator(data, num_datapoints=100):
+    """Returns the relative count and each bin location.
+    Args:
+        data (list): The data we want to make a histogram out of.
+        num_datapoints (int, optional): Number of datapoints we want on histogram. Defaults to 100.
+    Returns:
+        list, list: Relative count, and bin location.
+    """
+    hist, bin_edges = np.histogram(data, bins=num_datapoints)
+    hist = hist/max(hist) #normalizes it since we want to plot relative efficiency
+
+    bin_locations = []
+    for i in range(1, len(bin_edges)):
+        bin_locations.append((bin_edges[i-1]+bin_edges[i])/2)
+    
+    return hist, bin_locations
 #%%
 #Testing Kress' method
 #Preprocess data for numba
@@ -144,9 +179,26 @@ end = time.time()
 print("Elapsed = %s" % (end - start))
 
 #%%
+start = time.time()
 function_params = (total_kress_coeff, 5, 6, 5, 4, 'total_unweighted')
-# q2_ls = np.linspace(-1,1,5)
-# y_ls = project_1d(q2_ls, int(1e5), get_efficiency_kress, function_params, projected_variable='q2')
-    
+q2_ls = np.linspace(0,18,50)
+y_ls = project_1d(q2_ls, int(1e5), get_efficiency_kress, function_params, projected_variable='q2')
+end = time.time()
+print("Elapsed = %s" % (end - start)) 
 
+# %%
+
+y_ls = np.array(y_ls)
+y_ls /= max(y_ls)
+y_data, x_data = relative_histogram_generator(data['q2'], num_datapoints=75)
+
+x_data = np.array(x_data)
+x_data *= 10 
+x_data += 10
+plt.plot(x_data, y_data, '.', label='Data')
+plt.plot(q2_ls, y_ls, label='4d Eff. projected onto 1d')
+plt.xlabel(r'$q^{2}$')
+plt.ylabel('Relative frequency')
+plt.legend()
+plt.show()
 # %%
