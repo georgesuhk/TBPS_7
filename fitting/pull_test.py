@@ -9,12 +9,12 @@ Created on Thu Feb  2 11:18:27 2023
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
-import pandas as pd
+
 def gauss_function(x, a, x0, sigma):
     return a*np.exp(-(x-x0)**2/(2*sigma**2))
 
-def pull_test(expectedT,observedT,observedT_sd,nbins,p0):
-    pull = ((observedT-expectedT)/observedT_sd).flatten()
+def pull_test(T,mu_T,T_sd,nbins,p0):
+    pull = (mu_T-T)/T_sd
     n, bins, patches = plt.hist(pull, bins=nbins)
     step = (max(bins)-min(bins))/(2*len(n))
     popt, pcov = curve_fit(gauss_function, bins[:len(n)]+step , n, p0 = p0)
@@ -30,17 +30,20 @@ def pull_test(expectedT,observedT,observedT_sd,nbins,p0):
     return plt.show()
 #%% examples
 #input data
+import pandas as pd
+##input: original SM data
+expected = np.array([50, 50, 50, 50, 50, 50, 50, 50, 50, 50,
+                     50, 50, 50, 50, 50, 50, 50, 50, 50, 50,
+                     50, 50, 50, 50, 50, 50, 50, 50, 50, 50])
+##input: fitted values
+observed = np.array([50, 60, 40, 47, 53, 50, 60, 40, 47, 53,
+                     50, 66, 44, 45, 53, 50, 60, 40, 47, 53,
+                     40, 60, 40, 48, 53, 50, 60, 40, 47, 53])
+##input: fitted errors
+observed_sd = np.array([5, 6, 3, 4, 3 ,1, 2, 3, 4, 5,
+                     0, 6, 4, 7, 3, 1, 3 ,2, 2.5, 0.5,
+                     4, 6, 4, 4, 3, 3, 4, 2, 1, 1])
 
-expected = np.array([[50, 50, 50, 50, 50, 50, 50, 50, 50, 50],
-                     [50, 50, 50, 50, 50, 50, 50, 50, 50, 50],
-                     [50, 50, 50, 50, 50, 50, 50, 50, 50, 50]])
-observed = np.array([[50, 60, 40, 47, 53, 50, 60, 40, 47, 53],
-                     [50, 66, 40, 47, 53, 50, 60, 40, 47, 53],
-                     [40, 60, 40, 47, 53, 50, 60, 40, 47, 53]])
-observed_sd = np.array([[5, 6, 3, 4, 3 ,1, 2, 3, 4, 5],
-                     [0, 6, 4, 7, 3, 1, 3 ,2, 2.5, 0.5],
-                     [4, 6, 4, 4, 3, 3, 4, 2, 1, 1]])
-
-nbins = 5
+nbins = 7
 p0= [10, 0, 3]
 pull_test(expected,observed,observed_sd,nbins,p0)
