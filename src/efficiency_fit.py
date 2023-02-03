@@ -3,17 +3,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 from scipy.optimize import curve_fit
+from scipy.special import legendre
+from tqdm import tqdm
 #%%
 #import data
 data = pd.read_csv('acceptance_mc.csv')
 #%%
-#polynomials to fit (will revisit to change to Legendre Polynomial)
+#polynomials to fit
 n6_polynomial = lambda x, a,b,c,d,e,f,g : a*x**6 + b*x**5 + c*x**4 + d*x**3 + e*x*2 + f*x + g
 n6_polynomial_even = lambda x, a,b,c,d : a*x**6 + b*x**4 + c*x**2 + d
-
-#added by henry
-def q2_binning_sm(data, bin_ranges):
-    return [data[(data['q2'] >= bin_range[0]) & (data['q2'] <= bin_range[1])] for bin_range in bin_ranges.values()]
 
 def q2_binning(data, bin_ranges):
     """Returns a list of pandas data frames. Each data frame has q2 within the range specified by
@@ -55,6 +53,111 @@ def relative_histogram_generator(data, num_datapoints=100):
     
     return hist, bin_locations
 
+def histogram_generator(data, num_datapoints=100):
+    hist, bin_edges = np.histogram(data, bins=num_datapoints)
+
+    bin_locations = []
+    for i in range(1, len(bin_edges)):
+        bin_locations.append((bin_edges[i-1]+bin_edges[i])/2)
+    
+    return hist, bin_locations
+
+def get_efficiency_coeff_kress(bin, i_max=5, j_max=5, m_max=5, n_max=5, mode='total_unwieghted'):
+    #Rescale phi to be between -1 and 1
+    bin['phi'] = bin['phi']/np.pi
+    bin['q2'] = bin['q2']/max(bin['q2'])
+
+    c_coeff = []
+    
+    #Total efficiency
+    if mode == 'total_unweighted':
+        for i in range(0, i_max):
+            for j in range(0, j_max):
+                for m in range(0, m_max):
+                    for n in range(0, n_max):
+                        c = 0
+                        for e in range(0, len(bin)):
+                            legendre_terms = legendre(i)(bin['costhetal'][e])*legendre(j)(bin['costhetak'][e])*legendre(m)(bin['phi'][e])*legendre(i)(bin['q2'][e])
+                            c += (2*i+1)*(2*j+1)*(2*m+1)*(2*n+1)/(2**4)*legendre_terms
+                            c /= len(bin)
+                            c_coeff.append(c)
+                            
+        return c_coeff
+    else:
+        if mode == 'costhetal':
+            for i in range(0, i_max):
+                c = 0
+                for e in tqdm(range(0, len(bin))):
+                    c += (2*i+1)/2*legendre(i)(bin['costhetal'][e])
+                c_coeff.append(c)
+            return c_coeff
+        
+        if mode == 'costhetak':
+            for j in range(0, j_max):
+                c = 0
+                for e in range(0, len(bin)):
+                    c += (2*i+1)/2*legendre(i)(bin['costhetak'][e])
+                c_coeff.append(c)
+            return c_coeff
+
+        if mode == 'phi':
+            for i in range(0, m_max):
+                c = 0
+                for e in range(0, len(bin)):
+                    c += (2*i+1)/2*legendre(i)(bin['phi'][e])
+                c_coeff.append(c)
+            return c_coeff
+
+        if mode == 'q2':
+            for i in range(0, n_max):
+                c = 0
+                for e in range(0, len(bin)):
+                    c += (2*i+1)/2*legendre(i)(bin['q2'][e])
+                c_coeff.append(c)
+            return c_coeff
+
+def get_efficiency_kress(coeff_ls, costhetal=0, costhetak=0, phi=0, q2=0, i_max=5, j_max=5, m_max=5, n_max=5, mode='total_unwieghted'):
+    phi = phi/np.pi
+    #q2 = q2/maximum value of q2 in the dataset
+    
+    c_ls_pos = 0
+    total_efficiency = 0
+
+    if mode == 'total_unweighted':
+        for i in range(0, i_max):
+            for j in range(0, j_max):
+                for m in range(0, m_max):
+                    for n in range(0, n_max):
+                        user_input_legendre_terms = legendre(i)(costhetal)*legendre(j)(costhetak)*legendre(m)(phi)*legendre(n)(q2)
+                        total_efficiency += coeff_ls[c_ls_pos]*user_input_legendre_terms
+                        c_ls_pos += 1
+        return total_efficiency
+
+    if mode == 'costhetal':
+        for i in range(0, i_max):
+            print(c_ls_pos)
+            total_efficiency += coeff_ls[c_ls_pos]*legendre(i)(costhetal)
+            c_ls_pos += 1
+        return total_efficiency
+    
+    if mode == 'costhetak':
+        for i in range(0, j_max):
+            total_efficiency += coeff_ls[c_ls_pos]*legendre(i)(costhetak)
+            c_ls_pos += 1
+        return total_efficiency
+
+    if mode == 'phi':
+        for i in range(0, m_max):
+            total_efficiency += coeff_ls[c_ls_pos]*legendre(i)(phi)
+            c_ls_pos += 1
+        return total_efficiency
+    
+    if mode == 'q2':
+        for i in range(0, m_max):
+            total_efficiency += coeff_ls[c_ls_pos]*legendre(i)(q2)
+            c_ls_pos += 1
+        return total_efficiency
+
 def get_efficiency(bins_ls, bin_ranges, N, covariance=False, plotdata=True):
     """Takes in a list of pandas data frames, as returned by q2_binning function. Takes in bin ranges,
     and fits the appropriate polynomials to costhetak, costhetal, and phi histograms. Returns the popt
@@ -81,6 +184,7 @@ def get_efficiency(bins_ls, bin_ranges, N, covariance=False, plotdata=True):
     phi_cov_ls = []
 
     for i, bin in enumerate(bins_ls):
+        
         costhetak = bin['costhetak']
         y_costhetak, x_costhetak = relative_histogram_generator(costhetak, num_datapoints=N)
         popt_costhetak, cov_costhetak = curve_fit(n6_polynomial, x_costhetak, y_costhetak)
@@ -168,25 +272,57 @@ def total_efficiency(costhetak, costhetal, phi, q2, q2_ranges, costhetak_popt_ls
 #%%
 data = data.dropna()
 
-bin_ranges = {
-    0: [0.1, 0.98],
-    1: [1.1, 2.5],
-    2: [2.5, 4.0],
-    3: [4.0, 6.0],
-    4: [6.0, 8.0],
-    5: [15.0, 17.0],
-    6: [17.0, 19.0],
-    7: [11.0, 12.5],
-    8: [1.0, 6.0],
-    9: [15.0, 19.0]
-}
+#bin_ranges = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 0.9, 1.0,
+                # 1.2,
+                # 1.4,
+                # 1.6,
+                # 1.8,
+                # 2.0,
+                # 2.2,
+                # 2.4,
+                # 2.6,
+                # 2.8000000000000003,
+                # 3.0000000000000004,
+                # 3.2000000000000006,
+                # 3.400000000000001,
+                # 3.600000000000001,
+                # 3.800000000000001,
+                # 4.000000000000001,
+                # 4.200000000000001,
+                # 4.400000000000001,
+                # 4.600000000000001,
+                # 4.800000000000002,
+                # 5.000000000000002,
+                # 5.200000000000002,
+                # 5.400000000000002,
+                # 5.600000000000002,
+                # 5.8000000000000025,
+                # 6.3, 6.8, 7.3, 7.8, 8.3, 8.8, 9.3, 9.8, 10.3, 10.8, 11.3, 11.8, 12.3, 12.8, 13.3, 13.8, 14.3, 14.8, 15.3, 15.8, 16.3, 16.8, 17.3, 17.8, 18.3, 18.8, 19.3, 19.8, 20.3, 20.8]
+
+bin_ranges = bin_range = [0.1, 0.98, 2.5, 4, 6, 8, 15, 17, 19]
 
 #Bin the data according to q2
-#bins_ls = q2_binning(data, bin_ranges)
-#using q2_binning added by henry
-bins_ls = q2_binning_sm(df_before, bin_ranges)
-
+bins_ls = q2_binning(data, bin_ranges)
 #Compute popt lists
-popt_costhetak_ls, popt_costhetal_ls, popt_phi_ls = get_efficiency(bins_ls, bin_ranges, N=100, covariance=False, plotdata=False)
+popt_costhetak_ls, popt_costhetal_ls, popt_phi_ls = get_efficiency(bins_ls, bin_ranges, N=100, covariance=False, plotdata=True)
 #%%
 #Run this function to get the efficiency value for any 
+#%%
+#Testing Kress' method
+#First get the coefficients
+costhetal_kress_coeff = get_efficiency_coeff_kress(data, mode='costhetal')
+#%%
+costhetal = np.linspace(-1,1, 1000)
+y = get_efficiency_kress(costhetal_kress_coeff, costhetal=costhetal, mode='costhetal')
+y = np.array(y)
+y /= np.max(y)
+plt.plot(costhetal, y)
+y_hist, x_hist = relative_histogram_generator(data['costhetal'], 30)
+plt.plot(x_hist, y_hist, '.')
+plt.xlabel(r'$cos(\theta_{l})$')
+plt.ylabel(r'$Relative frequency$')
+plt.title('for all q2')
+plt.show()
+
+
+# %%
