@@ -1,3 +1,9 @@
+"""
+Demonstrating the combinatorial background remover. Plotting the full data
+and the data left when we remove the combinatorial background.
+@Max
+"""
+
 from xgboost import Booster, DMatrix
 import matplotlib.pyplot as plt
 from comb_background_recogniser import load_path, EXPERIMENT
@@ -8,7 +14,7 @@ plt.rcParams['figure.dpi'] = 300
 
 # load in combinatorial background identifier
 model = Booster()
-model.load_model("comb_background_identifier.json")
+model.load_model("comb_background_Identifier.json")
 
 
 df = load_path(EXPERIMENT) # total data
@@ -20,11 +26,11 @@ predictions = model.predict(reduced_df_DMatrix)  # predict
 
 # Filter
 df_filtered = df  # dataframe which will store filtered data
-df_filtered["is_background"] = predictions  # assign predictions to new row
+df_filtered["is_signal"] = predictions  # assign predictions to new row
 # predictions closer to zero indicate that event is not from comb. background
 # predictions closer to one indicate that event is from comb. background
-THRESHOLD = 0.05  # higher threshold means more data is kept
-df_filtered = df_filtered[df_filtered.is_background < THRESHOLD]
+THRESHOLD = 0.95  # higher threshold means more data is kept
+df_filtered = df_filtered[df_filtered.is_signal > THRESHOLD]
 
 # Plot unfiltered and filtered masses of B0
 plt.xlabel("B0 Mass")

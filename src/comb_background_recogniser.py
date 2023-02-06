@@ -10,19 +10,7 @@ from featurewiz import featurewiz
 # To pickle your data use "pandas.DataFrame.to_pickle"
 
 EXPERIMENT = "total_dataset.pkl"
-SIGNAL = "sig.pkl"
-PEAKING = [
-    "jpsi_mu_k_swap.pkl",
-    "psi2S.pkl",
-    "jpsi_mu_pi_swap.pkl",
-    "phimumu.pkl",
-    "Kmumu.pkl",
-    "pKmumu_piTop.pkl",
-    "pKmumu_piTok_kTop.pkl",
-    "k_pi_swap.pkl",
-    "jpsi.pkl",
-    "Kstarp_pi0.pkl",
-]
+SIGNAL = "jpsi.pkl"
 
 
 def load_path(name):
@@ -32,43 +20,32 @@ def load_path(name):
 
 if __name__ == "__main__":
 
-    # first we plot B_0 mass histogram from total data (experimental data)
-    data = load_path(EXPERIMENT)  # load in data
-    masses = data["B0_M"]  # take B0 mass column
-    plt.hist(masses, bins=int(5e2))  # bin masses into histogram
-    plt.show()
-
-    # XGboost will need to see how a backgound row looks
+    # XGboost will need to see how a background row looks
     # masses above a certain threshold are part of combinatorial background
-    background = data.query("B0_M > 5500")
-    background["is_background"] = 1  # tag background rows with 1
-    masses = background["B0_M"]  # take masses above the threshold
-    plt.hist(masses, bins=int(5e2))  # look at mass histogram above threshold
-    plt.show()
+    background = load_path(EXPERIMENT).query("B0_M > 5375") # take masses above the threshold
+    background["is_signal"] = 0
 
     # XGboost will need to see how a signal row looks
     signal = load_path(SIGNAL)
-    signal["is_background"] = 0  # tag all signal rows by 0
-    masses = signal["B0_M"]
-    plt.hist(masses, bins=int(5e2))
-    plt.show()
+    signal["is_signal"] = 1
 
     # make a combined data frame with the signal and background
     # Note: join="inner" is a command which deletes non-mutual columns
     df = pd.concat([background, signal], join="inner", ignore_index=True)
-    df.astype(np.float32)  # convert to 32 bit for RAM purposes
+
     """
-    # Specifically count the peaking files as non-background
+    # Set peaking files to background too
     for file in PEAKING:
         df_temp = load_path(file)
-        df_temp["is_background"] = 0
+        df_temp["is_signal"] = 1  # tag peaking files as background
         df = pd.concat([df, df_temp], join="inner", ignore_index=True)
     """
 
-    del signal, background # free up some RAM
+    df.astype(np.float32)  # convert to 32 bit for RAM purposes
+    del signal, background  # free up some RAM
 
     # pop off tags before ANOVA/SULOV analysis
-    is_background = df.pop("is_background")
+    is_signal = df.pop("is_signal")
 
     # Identify important features with ANOVA/SULOV
     features, train_m = featurewiz(df, target="B0_M", corr_limit=0.7,
@@ -77,11 +54,11 @@ if __name__ == "__main__":
 
     # Split data into train and test sets
     X_train, X_test, Y_train, Y_test = train_test_split(reduced_df,
-                                                        is_background,
+                                                        is_signal,
                                                         test_size=0.2)
 
     # Train model
-    model = XGBClassifier(n_estimators=30, learning_rate=0.5)
+    model = XGBClassifier(n_estimators=200, learning_rate=0.25)
     model.fit(X_train, Y_train)
 
     # plot the 'importance' of each of the reduced features
@@ -94,6 +71,19 @@ if __name__ == "__main__":
     print("Accuracy: {:.2f}%".format(accuracy))
 
     # Save model
-    model.save_model("comb_background_identifier.json")
+    model.save_model("comb_background_Identifier.json")
 
 
+
+"""PEAKING = [
+    "jpsi_mu_k_swap.pkl",
+    "psi2S.pkl",
+    "jpsi_mu_pi_swap.pkl",
+    "phimumu.pkl",
+    "Kmumu.pkl",
+    "pKmumu_piTop.pkl",
+    "pKmumu_piTok_kTop.pkl",
+    "k_pi_swap.pkl",
+    "jpsi.pkl",
+    "Kstarp_pi0.pkl",
+]"""
