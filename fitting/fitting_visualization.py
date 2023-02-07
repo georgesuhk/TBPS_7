@@ -155,10 +155,10 @@ def plot_toy_data_observables():
 
     for i in range(9):
         if i == 2:
-            ax[0][1].errorbar(range(len(fit.bins)), vals[:,i], yerr = errs[:,i], fmt = 'x')
+            ax[0][1].errorbar(range(len(fit.bins)), vals[:,i], xerr = np.array([.5 for n in range(len(fit.bins))]), yerr = errs[:,i], fmt = 'x', capsize = 4)
         elif i < 2:
-            ax[0][i].errorbar(range(len(fit.bins)), vals[:,i], yerr = errs[:,i], fmt = 'x')
+            ax[0][i].errorbar(range(len(fit.bins)), vals[:,i], xerr = np.array([.5 for n in range(len(fit.bins))]), yerr = errs[:,i], fmt = 'x', capsize = 4)
             ax[0][i].set_xlabel('Bin number')
         elif i > 2:
-            ax[int((i-1)/4)][(i-1)%4].errorbar(range(len(fit.bins)), vals[:,i], yerr = errs[:,i], fmt = 'x')
+            ax[int((i-1)/4)][(i-1)%4].errorbar(range(len(fit.bins)), vals[:,i], xerr = np.array([.5 for n in range(len(fit.bins))]), yerr = errs[:,i], fmt = 'x', capsize = 4)
             ax[int((i-1)/4)][(i-1)%4].set_xlabel('Bin number')
