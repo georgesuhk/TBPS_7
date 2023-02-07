@@ -1,13 +1,11 @@
 from model_trainer import train_model, load_path
 from tqdm import tqdm
 
-# Tunable Parameters
-THRESHOLD = 0.95
-
 # Data and savenames
 TOTAL_DATA = "total_dataset.pkl"
-SIGNAL = "jpsi.pkl"
+SIGNAL = "sig.pkl"
 BACKGROUNDS = [
+    "jpsi.pkl"
     "jpsi_mu_k_swap.pkl",
     "psi2S.pkl",
     "jpsi_mu_pi_swap.pkl",
@@ -38,4 +36,3 @@ if __name__ == '__main__':
     # make a model for each background to be removed
     for index, background in enumerate(tqdm(BACKGROUNDS)):
         train_model(background, SIGNAL, MODEL_NAMES[index])
-
