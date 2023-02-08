@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import pandas as pd
 import scipy
+from tqdm import tqdm
 
 # import datatset
 df_before = pd.read_csv('acceptance_mc.csv') # before selection
@@ -123,15 +124,6 @@ def get_efficiency(bins_ls, bin_ranges, N, covariance=False, plotdata=True):
         return costhetak_popt_ls, costhetal_popt_ls, phi_popt_ls
         
 #define the bootstrap function added by henry
-def bootstrapping(df, num):
-    """This is the function that generates 500 pseudo-events from the raw dataset.
-    Args:
-        df: raw dataset
-    Returns:
-        a list of pseudo-events, each stored as a dataframe
-    """
-    return [df.sample(frac=1, replace=True, random_state=1) for i in range(num)]
-    
 def get_bootstrap_params(df_after, num, bin_ranges, raw_popt_costhetak_ls, raw_popt_costhetal_ls, raw_popt_phi_ls):
     """This is the function that generates 500 pseudo-events from the raw dataset.
     Args:
@@ -142,8 +134,8 @@ def get_bootstrap_params(df_after, num, bin_ranges, raw_popt_costhetak_ls, raw_p
         3 3D arrays which are a list of parameters for each q^2 bins for each pseudo_event list of 500 pseudo-events.
     """
     params_costhetak, params_costhetal, params_phi = [], [], [] 
-    pseudo_events = bootstrapping(df_after, num)
-    for event in pseudo_events:
+    for i in tqdm(range(num)):
+        event = df_after.sample(frac=1, replace=True, random_state=1)
         bins_ls = q2_binning_sm(event, bin_ranges)
         num_of_bins_ls = [int(round(len(bins)/1000, -1)) for bins in bins_ls] #this is here to set the amount of bins for each q^2 bins  
         popt_costhetak_ls, popt_costhetal_ls, popt_phi_ls = get_efficiency(bins_ls, bin_ranges, N=num_of_bins_ls, covariance=False, plotdata=False)
