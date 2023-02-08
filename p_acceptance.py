@@ -25,6 +25,6 @@ def get_acceptance(variable: str, value: float):
     else:
         acceptance = 1/n6_polynomial_even(value, raw_data_params)
         efficiencies = [n6_polynomial_even(value, *param) for param in params]
-    error = stats.stdev(efficiencies)
+    error = stats.stdev(efficiencies)*acceptance
 
     return acceptance, error
