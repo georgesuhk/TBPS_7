@@ -113,12 +113,12 @@ def get_efficiency(bins_ls, bin_ranges, N, covariance=False, plotdata=True):
             plt.show()
 
         #Save the fit parameters into array
-        costhetak_popt_ls.append(popt_costhetak)
-        costhetal_popt_ls.append(popt_costhetal)
-        phi_popt_ls.append(popt_phi)
-        costhetak_cov_ls.append(cov_costhetak)
-        costhetal_cov_ls.append(cov_costhetal)
-        phi_cov_ls.append(cov_phi)
+        costhetak_popt_ls.append(popt_costhetak.tolist())
+        costhetal_popt_ls.append(popt_costhetal.tolist())
+        phi_popt_ls.append(popt_phi.tolist())
+        costhetak_cov_ls.append(cov_costhetak.tolist())
+        costhetal_cov_ls.append(cov_costhetal.tolist())
+        phi_cov_ls.append(cov_phi.tolist())
 
     if covariance == True:
         return costhetak_popt_ls, costhetal_popt_ls, phi_popt_ls, costhetak_cov_ls, costhetal_cov_ls, phi_cov_ls
@@ -148,11 +148,11 @@ def get_bootstrap_params(df_after, num, bin_ranges, raw_popt_costhetak_ls, raw_p
     params_costhetal.append(raw_popt_costhetal_ls)
     params_phi.append(raw_popt_phi_ls)
     with open('acceptance_k_params.json', 'w') as outfile:
-        json.dump(params_costhetak.tolist(), outfile)
+        json.dump(params_costhetak, outfile)
     with open('acceptance_l_params.json', 'w') as outfile:
-        json.dump(params_costhetal.tolist(), outfile)
+        json.dump(params_costhetal, outfile)
     with open('acceptance_phi_params.json', 'w') as outfile:
-        json.dump(params_phi.tolist(), outfile)
+        json.dump(params_phi, outfile)
     #return params_costhetak, params_costhetal, params_phi
     
 def main():
@@ -174,7 +174,7 @@ def main():
     num_of_bins_ls = [int(round(len(bins)/1000, -1)) for bins in bins_ls]
     #print(num_of_bins_ls)
     popt_costhetak_ls, popt_costhetal_ls, popt_phi_ls = get_efficiency(bins_ls, bin_ranges, N=num_of_bins_ls, covariance=False, plotdata=False)
-    get_bootstrap_params(df_after = df_after, num = 5, bin_ranges = bin_ranges, raw_popt_costhetak_ls = popt_costhetak_ls, raw_popt_costhetal_ls = popt_costhetal_ls, raw_popt_phi_ls = popt_phi_ls)
+    get_bootstrap_params(df_after = df_after, num = 500, bin_ranges = bin_ranges, raw_popt_costhetak_ls = popt_costhetak_ls, raw_popt_costhetal_ls = popt_costhetal_ls, raw_popt_phi_ls = popt_phi_ls)
 #%%
 main()
 # %%
