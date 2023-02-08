@@ -55,4 +55,48 @@ for key in bin_ranges:
     plt.xlabel(r'$cos(\theta_{l})$')
     plt.ylabel(r'Relative count')
     plt.show()
+
+    #Same thing for costhetak
+    costhetak_ls = np.linspace(-1, 1, 100)
+    start = time.time()
+    func_params = (total_kress_coeff, 5, 6, 5, 4)
+    y = effiency_costhetak(costhetak_ls, get_efficiency_kress, func_params, [-1,1], [-np.pi, np.pi], [lowq,highq], 10, 10, 10)
+    end = time.time()
+    print("Elapsed = %s" % (end - start))
+
+    #Plot the result overlaying data histogram
+    copy = data
+    copy = copy[copy['q2']>lowq]
+    copy = copy[copy['q2']<highq]
+    y_hist, x_hist = relative_histogram_generator(copy['costhetak'], 100)
+    y = np.array(y)
+    y = y/max(y)*max(y_hist)
+    plt.plot(x_hist, y_hist, '.')
+    plt.plot(costhetak_ls, y)
+    plt.title(f'{lowq}<q2<{highq}')
+    plt.xlabel(r'$cos(\theta_{k})$')
+    plt.ylabel(r'Relative count')
+    plt.show()
+
+    #Same thing for phi
+    phi_ls = np.linspace(-np.pi, np.pi, 100)
+    start = time.time()
+    func_params = (total_kress_coeff, 5, 6, 5, 4)
+    y = effiency_phi(phi_ls, get_efficiency_kress, func_params, [-1,1], [-1, 1], [lowq,highq], 10, 10, 10)
+    end = time.time()
+    print("Elapsed = %s" % (end - start))
+
+    #Plot the result overlaying data histogram
+    copy = data
+    copy = copy[copy['q2']>lowq]
+    copy = copy[copy['q2']<highq]
+    y_hist, x_hist = relative_histogram_generator(copy['phi'], 100)
+    y = np.array(y)
+    y = y/max(y)*max(y_hist)
+    plt.plot(x_hist, y_hist, '.')
+    plt.plot(phi_ls, y)
+    plt.title(f'{lowq}<q2<{highq}')
+    plt.xlabel(r'$\phi$')
+    plt.ylabel(r'Relative count')
+    plt.show()
 # %%
