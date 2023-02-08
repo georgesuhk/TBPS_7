@@ -18,13 +18,13 @@ def get_acceptance(variable: str, value: float):
     with open('acceptance_'+variable+'_params.json') as file_:
         params = json.load(file_)
     raw_data_params = params.pop()
-    #need to handle phi seperately since it uses the even polynomial function
-    if variable == 'phi'
-        acceptance = n6_polynomial_even(value, raw_data_params)
-        efficiencies = [n6_polynomial_even(value, *param) for param in params]
-    else:
-        acceptance = n6_polynomial(value, raw_data_params)
+    #need to handle k seperately since it uses the even polynomial function
+    if variable == 'k'
+        acceptance = 1/n6_polynomial(value, raw_data_params)
         efficiencies = [n6_polynomial(value, *param) for param in params]
+    else:
+        acceptance = 1/n6_polynomial_even(value, raw_data_params)
+        efficiencies = [n6_polynomial_even(value, *param) for param in params]
     error = stats.stdev(efficiencies)
 
     return acceptance, error
