@@ -5,7 +5,19 @@ Created on Thu Feb  2 11:18:27 2023
 
 @author: fei
 """
+#%% Thesis method: 
+'''
+A pull-study is conducted to test the correction of the veto.
 
+    T is the value returned by the fit, 
+    mu_T is the value with which the toy sample was generated, 
+    and T_sd is the uncertainty returned by the fit.
+
+'pull_test' gives the (gaussian) distribution
+By generating many event samples, fitting each one and calculating the pull 
+for every parameter in every sample it can be tested whether the fit returns 
+the correct parameters without any biases.
+'''
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
@@ -34,15 +46,15 @@ def pull_test(T,mu_T,T_sd,nbins,p0):
 #%% examples
 #input data
 import pandas as pd
-##input: original SM data
+##input: T
 expected = np.array([50, 50, 50, 50, 50, 50, 50, 50, 50, 50,
                      50, 50, 50, 50, 50, 50, 50, 50, 50, 50,
                      50, 50, 50, 50, 50, 50, 50, 50, 50, 50])
-##input: fitted values
+##input: mu_T
 observed = np.array([50, 60, 40, 47, 53, 50, 60, 40, 47, 53,
                      50, 66, 44, 45, 53, 50, 60, 40, 47, 53,
                      40, 60, 40, 48, 53, 50, 60, 40, 47, 53])
-##input: fitted errors
+##input: T_sd
 observed_sd = np.array([5, 6, 3, 4, 3 ,1, 2, 3, 4, 5,
                      0, 6, 4, 7, 3, 1, 3 ,2, 2.5, 0.5,
                      4, 6, 4, 4, 3, 3, 4, 2, 1, 1])
@@ -50,3 +62,25 @@ observed_sd = np.array([5, 6, 3, 4, 3 ,1, 2, 3, 4, 5,
 nbins = 7
 p0= [10, 0, 3]
 pull_test(expected,observed,observed_sd,nbins,p0)
+######################################################################
+#%%Jean's method
+import numpy as np
+
+def pull_test2(T,mu_T,distance):
+    d = (mu_T-T)
+    count=0
+    for i in range (0,len(d)):
+        if np.absolute(d[i])<distance:
+            count+=1
+    return print('Percentage rate of passing pull test=',count/len(d))
+    
+#%% examples
+## SM data
+expected = np.array([50, 50, 50, 50, 50, 50, 50, 50, 50, 50])
+##fitted values
+observed = np.array([50, 60, 40, 47, 53, 50, 60, 40, 47, 53])
+##input: fitted errors
+observed_sd = np.array([5, 6, 3, 4, 3 ,1, 2, 3, 4, 5])
+
+distance = 5
+pull_test2(expected,observed,distance)
