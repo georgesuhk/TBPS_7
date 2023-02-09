@@ -48,8 +48,8 @@ def pull_test(T,mu_T,T_sd,nbins,p0):
     a0.set_title('Pull distribution')
     a0.legend()
     a1.plot(T,pull,'.')
-    a1.set_xlabel('Pull')
-    a1.set_ylabel('T')
+    a1.set_xlabel('T')
+    a1.set_ylabel('Pull')
     return f.tight_layout()
 
 #%% examples
