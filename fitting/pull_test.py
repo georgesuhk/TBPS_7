@@ -40,6 +40,7 @@ def pull_test(T,mu_T,T_sd,nbins,p0):
     print(" Mu = %.2f +/- %.2f"%(popt[1],np.sqrt(pcov[1,1])))
     print(" Sig = %.2f +/- %.2f"%(popt[2],np.sqrt(pcov[2,2])))
     a0.plot(x, gauss_function(x, *popt))
+    a0.hist(pull, bins=nbins,color='xkcd:powder blue')
     a0.axvline(popt[1],color = 'black',linestyle='--',label=" $\mu$ = %.2f +/- %.2f\n $\sigma$ = %.2f +/- %.2f"%(popt[1],np.sqrt(pcov[1,1]),popt[2],np.sqrt(pcov[2,2])))
     a0.errorbar(bins[:len(n)]+step, n, xerr=[0.5*step for i in range(len(nerr))], yerr=nerr,fmt='x',color='red',capsize=0)
     a0.set_xlabel('Pull')
