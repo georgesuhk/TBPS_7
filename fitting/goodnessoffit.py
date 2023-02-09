@@ -4,28 +4,47 @@
 Created on Thu Feb  2 11:18:27 2023
 
 @author: fei
+
+
 """
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+import scipy.stats as stats
+from scipy.stats import chi2
+
+def chisq(T,mu_T,rejection_factor):
+    '''
+    perform Chi-Square Goodness of Fit Test
+        H0: (null hypothesis) A variable follows a hypothesized distribution.
+        H1: (alternative hypothesis) A variable does not follow a hypothesized distribution.
+    
+        Chi-Square test statistic, and the corresponding p-value
+        p correspond to dof = (len(datapoints)-1) = n-1
+    '''
+    statistic, pvalue = stats.chisquare(f_obs=mu_T, f_exp=T)
+    if pvalue > rejection_factor:
+        return print('p-value=%.5f:'%pvalue,' fail to reject the null hypothesis')
+    else:
+        return print('p-value=%.5f:',pvalue,' reject the null hypothesis')
+
 #%% Thesis method: 
 '''
 A pull-study is conducted to test the correction of the veto.
 
-    T is the value returned by the fit, 
-    mu_T is the value with which the toy sample was generated, 
-    and T_sd is the uncertainty returned by the fit.
+    T is the value returned by the fit, (It is the array of fitted value of bin height.)
+    mu_T is the value with which the toy sample was generated, (It is the array of bin height of distribution of the parameter.)
+    and T_sd is the uncertainty returned by the fit. (It is the uncertainty of paramater after fitting.)
 
 'pull_test' gives the (gaussian) distribution
 By generating many event samples, fitting each one and calculating the pull 
 for every parameter in every sample it can be tested whether the fit returns 
 the correct parameters without any biases.
 '''
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit
-
 def gauss_function(x, a, x0, sigma):
     return a*np.exp(-(x-x0)**2/(2*sigma**2))
 
-def pull_test(T,mu_T,T_sd,nbins,p0):
+def pull_test(T,mu_T,T_sd,nbins=10,p0):
     pull = (mu_T-T)/T_sd
     n, bins = np.histogram(pull, bins=nbins,weights = None) 
     
@@ -50,25 +69,6 @@ def pull_test(T,mu_T,T_sd,nbins,p0):
     a1.set_ylabel('Pull')
     return f.tight_layout()
 
-#%% examples
-#input data
-import pandas as pd
-fit=pd.read_csv('toy_data_observable_values.csv')
-fit2=pd.read_csv('toy_data_observable_errors.csv')
-df=pd.read_csv('toy_data_bin_0.csv')
-
-ctk = df.ctk #toy data
-fl=fit.fl_from_ctk[0] #fitted Fl from bin 0
-ctk_fitted_error=fit2.fl_from_ctk[0] #error of fitted Fl from bin 0
-
-ctk_fitted = 3/2 * fl * ctk**2 + 3/4 * (1-fl) * (1-ctk**2)
-
-
-nbins = 10
-plt.xlim(-10,10)
-p0= [100, 0, 20]
-pull_test(ctk,ctk_fitted,ctk_fitted_error,nbins,p0)
-
 ######################################################################
 #%%Jean's method
 import numpy as np
@@ -81,13 +81,3 @@ def pull_test2(T,mu_T,distance):
             count+=1
     return print('Percentage rate of passing pull test=',count/len(d))
     
-#%% examples
-## SM data
-expected = np.array([50, 50, 50, 50, 50, 50, 50, 50, 50, 50])
-##fitted values
-observed = np.array([50, 60, 40, 47, 53, 50, 60, 40, 47, 53])
-##input: fitted errors
-observed_sd = np.array([5, 6, 3, 4, 3 ,1, 2, 3, 4, 5])
-
-distance = 5
-pull_test2(expected,observed,distance)
