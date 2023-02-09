@@ -27,7 +27,11 @@ def gauss_function(x, a, x0, sigma):
 
 def pull_test(T,mu_T,T_sd,nbins,p0):
     pull = (mu_T-T)/T_sd
-    n, bins, patches = plt.hist(pull, bins=nbins)    
+    n, bins = np.histogram(pull, bins=nbins,weights = None) 
+    
+    f, (a0, a1) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [3, 1]})
+    
+   
     nsum=np.sum(n)
     nerr=((n/nsum)*(1-n/nsum))**0.5
     step = (max(bins)-min(bins))/(2*len(n))
@@ -35,14 +39,18 @@ def pull_test(T,mu_T,T_sd,nbins,p0):
     x = np.linspace(max(bins),min(bins),num=100)
     print(" Mu = %.2f +/- %.2f"%(popt[1],np.sqrt(pcov[1,1])))
     print(" Sig = %.2f +/- %.2f"%(popt[2],np.sqrt(pcov[2,2])))
-    plt.axvline(popt[1],color = 'black',linestyle='--',label=" $\mu$ = %.2f +/- %.2f\n $\sigma$ = %.2f +/- %.2f"%(popt[1],np.sqrt(pcov[1,1]),popt[2],np.sqrt(pcov[2,2])))
-    plt.plot(x, gauss_function(x, *popt))
-    plt.errorbar(bins[:len(n)]+step, n, xerr=[0.5*step for i in range(len(nerr))], yerr=nerr,fmt='x',color='red',capsize=0)
-    plt.xlabel('Pull')
-    plt.ylabel('#')
-    plt.title('Pull distribution')
-    plt.legend()
-    return plt.show()
+    a0.plot(x, gauss_function(x, *popt))
+    a0.axvline(popt[1],color = 'black',linestyle='--',label=" $\mu$ = %.2f +/- %.2f\n $\sigma$ = %.2f +/- %.2f"%(popt[1],np.sqrt(pcov[1,1]),popt[2],np.sqrt(pcov[2,2])))
+    a0.errorbar(bins[:len(n)]+step, n, xerr=[0.5*step for i in range(len(nerr))], yerr=nerr,fmt='x',color='red',capsize=0)
+    a0.set_xlabel('Pull')
+    a0.set_ylabel('Number of events')
+    a0.set_title('Pull distribution')
+    a0.legend()
+    a1.plot(T,pull,'.')
+    a1.set_xlabel('Pull')
+    a1.set_ylabel('T')
+    return f.tight_layout()
+
 #%% examples
 #input data
 import pandas as pd
