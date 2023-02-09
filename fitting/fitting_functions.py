@@ -114,7 +114,7 @@ def pdf_S(cos_theta_l, cos_theta_k, phi, _bin, S_index, *params):
         raise ValueError('index of S observable must be an integer of value, 4, 5, 7, or 8')
     
     
-    c2tl = np.sqrt((ctl**2 + 1) / 2) # cos(2theta_l)
+    c2tl = 2 * ctl ** 2 - 1 # cos(2theta_l)
     stl2 = 1-(ctl**2) # sin^2(theta_l)
     stl = np.sqrt(stl2) # sin(theta_l)
     stk2 = 1-(ctk**2) # sin^2(theta_k)

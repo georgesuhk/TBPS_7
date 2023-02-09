@@ -162,3 +162,18 @@ def plot_toy_data_observables():
         elif i > 2:
             ax[int((i-1)/4)][(i-1)%4].errorbar(range(len(fit.bins)), vals[:,i], xerr = np.array([.5 for n in range(len(fit.bins))]), yerr = errs[:,i], fmt = 'x', capsize = 4)
             ax[int((i-1)/4)][(i-1)%4].set_xlabel('Bin number')
+
+def plot_multiD_observables(vals, errs):
+    fig, ax = plt.subplots(2, 4)
+    ax[0][0].set_title(r'$A_{FB}$')
+    ax[0][1].set_title(r'$F_L$')
+    ax[0][2].set_title(r'$S_3$')
+    ax[0][3].set_title(r'$S_4$')
+    ax[1][0].set_title(r'$S_5$')
+    ax[1][1].set_title(r'$S_7$')
+    ax[1][2].set_title(r'$S_8$')
+    ax[1][3].set_title(r'$S_9$')
+
+    for i in range(8):
+        ax[int(i/4)][int(i%4)].errorbar(range(7), vals[:,i], xerr = np.array([.5 for n in range(7)]), yerr = errs[:,i], fmt = 'x', capsize = 4)
+        ax[int(i/4)][int(i%4)].set_xlabel('Bin number')
