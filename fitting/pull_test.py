@@ -29,9 +29,7 @@ def pull_test(T,mu_T,T_sd,nbins,p0):
     pull = (mu_T-T)/T_sd
     n, bins = np.histogram(pull, bins=nbins,weights = None) 
     
-    f, (a0, a1) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [3, 1]})
-    
-   
+    f, (a0, a1) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [3, 1]})  
     nsum=np.sum(n)
     nerr=((n/nsum)*(1-n/nsum))**0.5
     step = (max(bins)-min(bins))/(2*len(n))
@@ -55,22 +53,22 @@ def pull_test(T,mu_T,T_sd,nbins,p0):
 #%% examples
 #input data
 import pandas as pd
-##input: T
-expected = np.array([50, 50, 50, 50, 50, 50, 50, 50, 50, 50,
-                     50, 50, 50, 50, 50, 50, 50, 50, 50, 50,
-                     50, 50, 50, 50, 50, 50, 50, 50, 50, 50])
-##input: mu_T
-observed = np.array([50, 60, 40, 47, 53, 50, 60, 40, 47, 53,
-                     50, 66, 44, 45, 53, 50, 60, 40, 47, 53,
-                     40, 60, 40, 48, 53, 50, 60, 40, 47, 53])
-##input: T_sd
-observed_sd = np.array([5, 6, 3, 4, 3 ,1, 2, 3, 4, 5,
-                     0, 6, 4, 7, 3, 1, 3 ,2, 2.5, 0.5,
-                     4, 6, 4, 4, 3, 3, 4, 2, 1, 1])
+fit=pd.read_csv('toy_data_observable_values.csv')
+fit2=pd.read_csv('toy_data_observable_errors.csv')
+df=pd.read_csv('toy_data_bin_0.csv')
 
-nbins = 7
-p0= [10, 0, 3]
-pull_test(expected,observed,observed_sd,nbins,p0)
+ctk = df.ctk #toy data
+fl=fit.fl_from_ctk[0] #fitted Fl from bin 0
+ctk_fitted_error=fit2.fl_from_ctk[0] #error of fitted Fl from bin 0
+
+ctk_fitted = 3/2 * fl * ctk**2 + 3/4 * (1-fl) * (1-ctk**2)
+
+
+nbins = 10
+plt.xlim(-10,10)
+p0= [100, 0, 20]
+pull_test(ctk,ctk_fitted,ctk_fitted_error,nbins,p0)
+
 ######################################################################
 #%%Jean's method
 import numpy as np
