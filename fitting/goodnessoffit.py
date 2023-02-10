@@ -66,7 +66,7 @@ def pull_test(T,mu_T,T_sd,bin_centre,nbins=10,p0=[1000,0,2]):
     a0.set_title('Pull distribution')
     a0.legend()
     a1.plot(bin_centre,pull,'.')
-    a1.set_xlabel('T')
+    a1.set_xlabel('ctk')#different name for other parameters
     a1.set_ylabel('Pull')
     return f.tight_layout()
 
