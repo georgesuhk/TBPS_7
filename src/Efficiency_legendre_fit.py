@@ -2,20 +2,18 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-from scipy.optimize import curve_fit
-from scipy.special import legendre
-from tqdm import tqdm
 from numba import jit
+from numba import njit
 import time
-from scipy import integrate
 import pickle 
 
 import warnings
 warnings.filterwarnings("ignore")
 #%%
-#import data
+# import data
 data = pd.read_csv('acceptance_mc.csv')
 data = data.dropna()
+# data = data[data['q2'] <= 18]
 #%%
 maxq2 = max(data['q2'])
 
@@ -148,80 +146,73 @@ def get_efficiency_kress(costhetal, costhetak, phi, q2, coeff_ls, i_max=5, j_max
     return total_efficiency
 
 @jit(nopython=True)
-def project_1d(var_ls, N, func, func_params, projected_variable, costhetal_range, costhetak_range, phi_range, q2_range):
-    """Projects the 4d efficiency function onto 1d. The dimension to project onto is specified by projected_variable. The range of the other three variables
-    should also be specified.
+def effiency_costhetal(costhetal_ls, func, func_params, costhetak_lim, phi_lim, q2_lim, N_costhetak, N_phi, N_q2):
+    hx = (costhetak_lim[1]-costhetak_lim[0])
+    hx = hx/N_costhetak
+    hy = (phi_lim[1]-phi_lim[0])
+    hy = hy/N_phi
+    hz = (q2_lim[1]-q2_lim[0])
+    hz = hz/N_q2
+    x_ls = np.linspace(costhetak_lim[0], costhetak_lim[1], N_costhetak)
+    y_ls = np.linspace(phi_lim[0], phi_lim[1], N_phi)
+    z_ls = np.linspace(q2_lim[0], q2_lim[1], N_q2)
 
-    This method uses Monte Carlo integration, which always has error in the order of O(N^-0.5).
+    output = []
+    for costhetal in costhetal_ls:
+        integral = 0
+        for i in range(1, N_costhetak-1):
+            for j in range(1, N_phi-1):
+                for k in range(1, N_q2-1):
+                    integral += func(costhetal, x_ls[i], y_ls[j], z_ls[k], *func_params)
+        integral = integral*hx*hy*hz
+        output.append(integral)
+    return output
 
-    Suggestion: This method is quite slow. For var_ls of length 50, it takes about 200s. We recommend having len(var_ls) between 50-100, then interpolating the
-    output to obtain the efficiency at any arbitrary value on that dimension.
+@jit(nopython=True)
+def effiency_costhetak(costhetak_ls, func, func_params, costhetal_lim, phi_lim, q2_lim, N_costhetal, N_phi, N_q2):
+    hx = (costhetal_lim[1]-costhetal_lim[0])
+    hx = hx/N_costhetal
+    hy = (phi_lim[1]-phi_lim[0])
+    hy = hy/N_phi
+    hz = (q2_lim[1]-q2_lim[0])
+    hz = hz/N_q2
+    x_ls = np.linspace(costhetal_lim[0], costhetal_lim[1], N_costhetal)
+    y_ls = np.linspace(phi_lim[0], phi_lim[1], N_phi)
+    z_ls = np.linspace(q2_lim[0], q2_lim[1], N_q2)
 
-    Args:
-        var_ls (list): A list of the independent variable we are projecting onto, e.g. q2_ls = np.linspace(0, 18, 100)
-        N (int): Number of random samples for Monte Carlo integration.
-        func (function): The get_efficiency_kress method.
-        func_params (tuple): Parameters for the get_efficiency_kress method.
-        projected_variable (str, optional): The dimension to project onto, e.g. 'costhetak'. Defaults to 'q2'.
-        costhetal_range (list, optional): Integration range for costhetal. Defaults to [-1,1].
-        costhetak_range (list, optional): Integration range for costhetak. Defaults to [-1,1].
-        phi_range (list, optional): Integration range for phi. Defaults to [-1,1].
-        q2_range (list, optional): Integration range for q2. Defaults to [-1,1].
+    output = []
+    for costhetak in costhetak_ls:
+        integral = 0
+        for i in range(1, N_costhetal-1):
+            for j in range(1, N_phi-1):
+                for k in range(1, N_q2-1):
+                    integral += func(x_ls[i], costhetak, y_ls[j], z_ls[k], *func_params)
+        integral = integral*hx*hy*hz
+        output.append(integral)
+    return output
 
-    Returns:
-        list: A list of effiency values at each point in var_ls. Note, these efficiency values are not scaled to be between 0 and 1. This can
-        simply be done by converting the output to np.array and do output/max(output).
-    """
-    #due to the way numba works, we cannot use global variables inside functions.
-    #so instead, we pass the arguments/parameters of the efficiency function as input here
+@jit(nopython=True)
+def effiency_phi(phi_ls, func, func_params, costhetal_lim, costhetak_lim, q2_lim, N_costhetal, N_costhetak, N_q2):
+    hx = (costhetal_lim[1]-costhetal_lim[0])
+    hx = hx/N_costhetal
+    hy = (costhetak_lim[1]-costhetak_lim[0])
+    hy = hy/N_costhetak
+    hz = (q2_lim[1]-q2_lim[0])
+    hz = hz/N_q2
+    x_ls = np.linspace(costhetal_lim[0], costhetal_lim[1], N_costhetal)
+    y_ls = np.linspace(costhetak_lim[0], costhetak_lim[1], N_costhetak)
+    z_ls = np.linspace(q2_lim[0], q2_lim[1], N_q2)
 
-    output_ls = []
-
-    if projected_variable == 'q2':
-        norm = 1/N*(costhetal_range[1]-costhetal_range[0])*(costhetak_range[1]-costhetak_range[0])*(phi_range[1]-phi_range[0])
-        xmin, xmax = costhetal_range
-        ymin, ymax = costhetak_range
-        zmin, zmax = phi_range
-        for var in var_ls:
-            integral = 0
-            for i in range(0, N):
-                x = np.random.uniform(xmin, xmax)
-                y = np.random.uniform(ymin, ymax)
-                z = np.random.uniform(zmin, zmax)
-                integral += func(x, y, z, var, *func_params)
-            output_ls.append(integral/norm)
-    elif projected_variable == 'costhetal':
-        norm = 1/N*(q2_range[1]-q2_range[0])*(costhetak_range[1]-costhetak_range[0])*(phi_range[1]-phi_range[0])
-        for var in var_ls:
-            integral = 0
-            for i in range(0, N):
-                x = np.random.uniform(costhetak_range[0], costhetak_range[1])
-                y = np.random.uniform(phi_range[0], phi_range[1])
-                z = np.random.uniform(q2_range[0], q2_range[1])
-                integral += func(var, x, y, z, *func_params)
-            output_ls.append(integral/norm)
-    elif projected_variable == 'costhetak':
-        norm = 1/N*(q2_range[1]-q2_range[0])*(costhetal_range[1]-costhetal_range[0])*(phi_range[1]-phi_range[0])
-        for var in var_ls:
-            integral = 0
-            for i in range(0, N):
-                x = np.random.uniform(costhetal_range[0], costhetal_range[1])
-                y = np.random.uniform(phi_range[0], phi_range[1])
-                z = np.random.uniform(q2_range[0], q2_range[1])
-                integral += func(x, var, y, z, *func_params)
-            output_ls.append(integral/norm)
-    elif projected_variable == 'phi':
-        norm = 1/N*(q2_range[1]-q2_range[0])*(costhetal_range[1]-costhetal_range[0])*(costhetak_range[1]-costhetak_range[0])
-        for var in var_ls:
-            integral = 0
-            for i in range(0, N):
-                x = np.random.uniform(costhetal_range[0], costhetal_range[1])
-                y = np.random.uniform(costhetak_range[0], costhetak_range[1])
-                z = np.random.uniform(q2_range[0], q2_range[1])
-                integral += func(x, y, var, z, *func_params)
-            output_ls.append(integral/norm)
-
-    return output_ls
+    output = []
+    for phi in phi_ls:
+        integral = 0
+        for i in range(1, N_costhetal-1):
+            for j in range(1, N_costhetak-1):
+                for k in range(1, N_q2-1):
+                    integral += func(x_ls[i], y_ls[i], phi, z_ls[k], *func_params)
+        integral = integral*hx*hy*hz
+        output.append(integral)
+    return output
 
 def relative_histogram_generator(data, num_datapoints=100):
     """Returns the relative count and each bin location.
@@ -240,112 +231,3 @@ def relative_histogram_generator(data, num_datapoints=100):
     
     return hist, bin_locations
 #%%
-"""
-Example code
-"""
-#Pre-process the data. This only has to be done once.
-preprocessed_data = preprocess_jit(data)
-# %%
-#Get coefficients c_ijmn. This only has to be done once.
-start = time.time()
-total_kress_coeff = get_efficiency_coeff_kress(*preprocessed_data, mode='total_unweighted', i_max=5, j_max=6, m_max=5, n_max=4)
-end = time.time()
-print("Elapsed = %s" % (end - start))
-#%%
-#Visualize the efficieny by projecting the 4d function onto 1d.
-start = time.time()
-function_params = (total_kress_coeff, 5, 6, 5, 4) #Specifiy the function parameters to pass into
-q2_ls = np.linspace(0, max(data['q2']), 50) #Create a list for q2 we would like to project the efficiencies onto.
-#Project 4d efficiencies onto the q2 values specified on the previouse line.
-#Note: the q2 range is not actually used, we just specified [-1,1] as a placeholder.
-q2_y_ls = project_1d(q2_ls, int(1e5), get_efficiency_kress, function_params, projected_variable='q2', costhetak_range=[-1,1], costhetal_range=[-1,1], phi_range=[-1,1], q2_range=[-1,1]) 
-end = time.time()
-print("Elapsed = %s" % (end - start)) 
-
-# %%
-#Plotting the results
-#Projection onto q2
-q2_y_ls = np.array(q2_y_ls) #Converts q2_y_ls to a np.array.
-q2_y_ls /= max(q2_y_ls) #Scale it so that we get an efficiency in the range 0 to 1.
-
-q2_y_data, q2_x_data = relative_histogram_generator(data['q2'], num_datapoints=75) #Generate relative histogram bin centers and counts of q2 from data.
-
-#Plot the results.
-plt.plot(q2_x_data, q2_y_data, '.', label='Data')
-plt.plot(q2_ls, q2_y_ls, label='4d Eff. projected onto 1d')
-plt.xlabel(r'$q^{2}$')
-plt.ylabel('Relative frequency')
-plt.legend()
-plt.ylim([0, 1])
-plt.show()
-# %%
-#We can do the same steps to project onto costhetal, costhetak, and phi.
-#Note the integration limits of q2.
-maxq2 = max(data['q2'])
-
-start = time.time()
-function_params = (total_kress_coeff, 5, 6, 5, 4) 
-costhetal_ls = np.linspace(-1, 1, 50) 
-costhetal_y_ls = project_1d(costhetal_ls, int(1e5), get_efficiency_kress, function_params, projected_variable='q2', costhetak_range=[-1,1], costhetal_range=[-1,1], phi_range=[-1,1], q2_range=[0.0, maxq2]) 
-end = time.time()
-print("Elapsed = %s" % (end - start)) 
-
-start = time.time()
-function_params = (total_kress_coeff, 5, 6, 5, 4) 
-costhetak_ls = np.linspace(-1, 1, 50) 
-costhetak_y_ls = project_1d(costhetak_ls, int(1e5), get_efficiency_kress, function_params, projected_variable='q2', costhetak_range=[-1,1], costhetal_range=[-1,1], phi_range=[-1,1], q2_range=[0.0, maxq2]) 
-end = time.time()
-print("Elapsed = %s" % (end - start)) 
-
-start = time.time()
-function_params = (total_kress_coeff, 5, 6, 5, 4) 
-phi_ls = np.linspace(-np.pi, np.pi, 50) 
-phi_y_ls = project_1d(phi_ls, int(1e5), get_efficiency_kress, function_params, projected_variable='q2', costhetak_range=[-1,1], costhetal_range=[-1,1], phi_range=[-1,1], q2_range=[0.0, maxq2]) 
-end = time.time()
-print("Elapsed = %s" % (end - start)) 
-# %%
-costhetal_y_ls = np.array(costhetal_y_ls) 
-costhetal_y_ls /= max(costhetal_y_ls) 
-costhetal_y_data, costhetal_x_data = relative_histogram_generator(data['costhetal'], num_datapoints=75)
-plt.plot(costhetal_x_data, costhetal_y_data, '.', label='Data')
-plt.plot(costhetal_ls, costhetal_y_ls, label='4d Eff. projected onto 1d')
-plt.xlabel(r'$cos(\theta_{l})$')
-plt.ylabel('Relative frequency')
-plt.legend()
-plt.show()
-
-costhetak_y_ls = np.array(costhetak_y_ls) 
-costhetak_y_ls /= max(costhetak_y_ls) 
-costhetak_y_data, costhetak_x_data = relative_histogram_generator(data['costhetak'], num_datapoints=75)
-plt.plot(costhetak_x_data, costhetak_y_data, '.', label='Data')
-plt.plot(costhetak_ls, costhetak_y_ls, label='4d Eff. projected onto 1d')
-plt.xlabel(r'$cos(\theta_{k})$')
-plt.ylabel('Relative frequency')
-plt.legend()
-plt.show()
-
-phi_y_ls = np.array(phi_y_ls) 
-phi_y_ls /= max(phi_y_ls) 
-phi_y_data, phi_x_data = relative_histogram_generator(data['phi'], num_datapoints=75)
-plt.plot(phi_x_data, phi_y_data, '.', label='Data')
-plt.plot(phi_ls, phi_y_ls, label='4d Eff. projected onto 1d')
-plt.xlabel(r'$\phi$')
-plt.ylabel('Relative frequency')
-plt.legend()
-plt.show()
-
-#%%
-#Make a dictionary to store this data so we don't ever have to calculate them again.
-#We simply take this and interpolate it to get values at any arbitrary point.
-eff_1d = {}
-eff_1d['q2_x'] = q2_ls
-eff_1d['q2_y'] = q2_y_ls
-eff_1d['costhetal_x'] = costhetal_ls
-eff_1d['costhetal_y'] = costhetal_y_ls
-eff_1d['costhetak_x'] = costhetak_ls
-eff_1d['costhetak_y'] = costhetak_y_ls
-eff_1d['phi_x'] = phi_ls
-eff_1d['phi_y'] = phi_y_ls
-
-with open('eff_1d.pkl', 'wb') as f:
-    pickle.dump(eff_1d, f)
