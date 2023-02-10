@@ -44,9 +44,9 @@ the correct parameters without any biases.
 def gauss_function(x, a, x0, sigma):
     return a*np.exp(-(x-x0)**2/(2*sigma**2))
 
-def pull_test(T,mu_T,T_sd,nbins=10,p0):
+def pull_test(T,mu_T,T_sd,nbins=10,p0=p0= [1000, 0, 2]):
     pull = (mu_T-T)/T_sd
-    n, bins = np.histogram(pull, bins=nbins,weights = None) 
+    n, bins = np.histogram(pull, bins=nbins,weights = T) 
     
     f, (a0, a1) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [3, 1]})  
     nsum=np.sum(n)
@@ -57,7 +57,7 @@ def pull_test(T,mu_T,T_sd,nbins=10,p0):
     print(" Mu = %.2f +/- %.2f"%(popt[1],np.sqrt(pcov[1,1])))
     print(" Sig = %.2f +/- %.2f"%(popt[2],np.sqrt(pcov[2,2])))
     a0.plot(x, gauss_function(x, *popt))
-    a0.hist(pull, bins=nbins,color='xkcd:powder blue')
+    a0.hist(pull, bins=nbins,weights = T,color='xkcd:powder blue')
     a0.axvline(popt[1],color = 'black',linestyle='--',label=" $\mu$ = %.2f +/- %.2f\n $\sigma$ = %.2f +/- %.2f"%(popt[1],np.sqrt(pcov[1,1]),popt[2],np.sqrt(pcov[2,2])))
     a0.errorbar(bins[:len(n)]+step, n, xerr=[0.5*step for i in range(len(nerr))], yerr=nerr,fmt='x',color='red',capsize=0)
     a0.set_xlabel('Pull')
