@@ -34,7 +34,8 @@ A pull-study is conducted to test the correction of the veto.
 
     T is the value returned by the fit, (It is the array of fitted value of bin height.)
     mu_T is the value with which the toy sample was generated, (It is the array of bin height of distribution of the parameter.)
-    and T_sd is the uncertainty returned by the fit. (It is the uncertainty of paramater after fitting.)
+    T_sd is the uncertainty returned by the fit, (It is the uncertainty of paramater after fitting.)
+    bin_centre is the centre of bin of the distribution.
 
 'pull_test' gives the (gaussian) distribution
 By generating many event samples, fitting each one and calculating the pull 
@@ -44,7 +45,7 @@ the correct parameters without any biases.
 def gauss_function(x, a, x0, sigma):
     return a*np.exp(-(x-x0)**2/(2*sigma**2))
 
-def pull_test(T,mu_T,T_sd,nbins=10,p0=p0= [1000, 0, 2]):
+def pull_test(T,mu_T,T_sd,bin_centre,nbins=10,p0=[1000,0,2]):
     pull = (mu_T-T)/T_sd
     n, bins = np.histogram(pull, bins=nbins,weights = T) 
     
@@ -64,7 +65,7 @@ def pull_test(T,mu_T,T_sd,nbins=10,p0=p0= [1000, 0, 2]):
     a0.set_ylabel('Number of events')
     a0.set_title('Pull distribution')
     a0.legend()
-    a1.plot(T,pull,'.')
+    a1.plot(bin_centre,pull,'.')
     a1.set_xlabel('T')
     a1.set_ylabel('Pull')
     return f.tight_layout()
