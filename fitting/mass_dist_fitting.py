@@ -12,11 +12,25 @@ import iminuit
 from scipy.special import erf
 
 
-data_path = 'C:/Users/victo/ic-teach-kstmumu-public/kstarmumu_toy_data/'
-#remember to have the correct path for this part
-#currently accessing toy data
-files = [f'{data_path}toy_data_bin_{i}.csv' for i in range(7)]
-bins = [pd.read_csv(file) for file in files]
+data = pd.read_csv('cleaned_total_dataset.csv')
+
+bin_ranges = [[.1, .98],
+              [1.1, 2.5],
+              [2.5, 4.0],
+              [4.0, 6.0],
+              [6.0, 8.0],
+              [15., 17.],
+              [17., 19.],
+              [11., 12.5],
+              [1.0, 6.0],
+              [15., 19.]]
+
+#bin the data
+
+def q2_binning_sm(data, bin_ranges):
+    return [data[(data['q2'] >= bin_range[0]) & (data['q2'] <= bin_range[1])] for bin_range in bin_ranges]
+
+bins = q2_binning_sm(data, bin_ranges)
 
 #mass distribution functions
 def crystal_ball(x, mean, alpha, n, sigma):
@@ -65,7 +79,7 @@ def log_likelihood(dist, _bin, *params):
     Returns:
         scalar negative log-likelihood value
     '''
-    mass_data = bins[_bin]['mB']
+    mass_data = bins[_bin]['B0_M']
     scalar_array = dist(np.array(mass_data), *params) # use np.array(mass_data) because of jankiness between pandas and numpy
     
     return -np.sum(np.log(scalar_array))
@@ -89,10 +103,10 @@ def minimize_logL(dist, _bin, initial_guess):
 
 def fit_crystal_ball(_bin, plotting=False):
     'Fits a crystal ball distribution to the specified bin and returns an array of fitted parameters'
-    initial_guess = [200, 1, 2., 10]
+    initial_guess = [5200, 1, 2., 25]
     m = minimize_logL(crystal_ball, _bin, initial_guess)
     if plotting:
-        heights, edges, patches = plt.hist(bins[_bin]['mB'])
+        heights, edges, patches = plt.hist(bins[_bin]['B0_M'])
         centers = 0.5*(edges[1] - edges[0]) + edges[:-1]
         xs = np.linspace(centers.min(), centers.max(), 1000)
         ys = crystal_ball(xs, *m.values)
@@ -101,17 +115,16 @@ def fit_crystal_ball(_bin, plotting=False):
     #print(f'Minimum is valid: {m.fmin.is_valid}')
     return m.values, m.errors
 
-def fit_toy_data_masses(plotting = False):
+def mass_fit(plotting = False):
     'Fit crystal ball distributions to each bin of the toy data and returns an array of fitted parameters'
     vals = []
     errs = []
-    if plotting:
-        fig, ax = plt.subplots(1, len(bins))
     for i, _bin in enumerate(bins):
         if plotting:
-            plt.subplot(1, len(bins), i+1)
+            plt.subplot(2, len(bins)/2, i+1)
             plt.title('Bin %.i' %i)
             plt.xlabel(r'$m_b$')
+            plt.ylabel('Count')
             bin_vals, bin_errs = fit_crystal_ball(i, plotting=True)
         else:
             bin_vals, bin_errs = fit_crystal_ball(i, plotting=False)

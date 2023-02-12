@@ -11,13 +11,27 @@ import iminuit
 import copy
 import efficiency_fit as acc
 
-data_path = 'C:/Users/victo/ic-teach-kstmumu-public/kstarmumu_toy_data/'
+
 #remember to have the correct path for this part
 #currently accessing toy data
-files = [f'{data_path}toy_data_bin_{i}.csv' for i in range(7)]
-bins = [pd.read_csv(file) for file in files]
+data = pd.read_csv('cleaned_total_dataset.csv')
+bin_ranges = [[.1, .98],
+              [1.1, 2.5],
+              [2.5, 4.0],
+              [4.0, 6.0],
+              [6.0, 8.0],
+              [15., 17.],
+              [17., 19.],
+              [11., 12.5],
+              [1.0, 6.0],
+              [15., 19.]]
 
+#bin the data
 
+def q2_binning_sm(data, bin_ranges):
+    return [data[(data['q2'] >= bin_range[0]) & (data['q2'] <= bin_range[1])] for bin_range in bin_ranges]
+
+bins = q2_binning_sm(data, bin_ranges)
 
 #Probability distributions to fit to the data
   
@@ -357,14 +371,68 @@ def toy_data_observables():
     
     return np.array(values), np.array(errors)
 
+def real_data_observables():
+    '''
+    A function to calculate all observables from the projected pdf fits for the toy data
+    
+    Returns the values of the observables and their errors as two separate arrays
+    The order of the bins is preserved in the array
+    '''
+    values = []
+    errors = []
+    for i, _bin in enumerate(bins):
+        m_ctl = minimize_logL(pdf_ctl, i)
+        print(f'ctl minimum is valid: {m_ctl.fmin.is_valid}')
+        m_ctk = minimize_logL(pdf_ctk, i, fl = .5) # initial guess is important here
+        print(f'ctk minimum is valid: {m_ctk.fmin.is_valid}')
+        m_phi = minimize_logL(pdf_phi, i)
+        print(f'phi minimum is valid: {m_phi.fmin.is_valid}')
+        
+        m_S4 = minimize_logL(pdf_S, i, fl=m_ctl.values[1], S_index = 4)
+        print(f'bin {i} S4 minimum is valid: {m_S4.fmin.is_valid}')
+        m_S5 = minimize_logL(pdf_S, i, fl=m_ctl.values[1], S_index = 5)
+        print(f'bin {i} S5 minimum is valid: {m_S5.fmin.is_valid}')
+        m_S7 = minimize_logL(pdf_S, i, fl=m_ctl.values[1], S_index = 7)
+        print(f'bin {i} S7 minimum is valid: {m_S7.fmin.is_valid}')
+        m_S8 = minimize_logL(pdf_S, i, fl=m_ctl.values[1], S_index = 8)
+        print(f'bin {i} S8 minimum is valid: {m_S8.fmin.is_valid}')
+        
+        afb_val = m_ctl.values[0]
+        afb_err = m_ctl.errors[0]
+        fl_ctl_val = m_ctl.values[1]
+        fl_ctl_err = m_ctl.errors[1]
+        
+        fl_ctk_val = m_ctk.values[0]
+        fl_ctk_err = m_ctk.errors[0]
+        
+        s3_val = m_phi.values[0]
+        s3_err = m_phi.errors[0]
+        s9_val = m_phi.values[1]
+        s9_err = m_phi.errors[1]
+        
+        s4_val = m_S4.values[0]
+        s4_err = m_S4.errors[0]
+        
+        s5_val = m_S5.values[0]
+        s5_err = m_S5.errors[0]
+        
+        s7_val = m_S7.values[0]
+        s7_err = m_S7.errors[0]
+        
+        s8_val = m_S8.values[0]
+        s8_err = m_S8.errors[0]
+        
+        values.append([afb_val, fl_ctl_val, fl_ctk_val, s3_val, s4_val, s5_val, s7_val, s8_val, s9_val])
+        errors.append([afb_err, fl_ctl_err, fl_ctk_err, s3_err, s4_err, s5_err, s7_err, s8_err, s9_err])
+    
+    return np.array(values), np.array(errors)
 
+#code to generate and save observable values and errors
 
-#code to generate and save toy data observable values and errors
+vals, errs = real_data_observables()
+#vals = pd.DataFrame(vals)
+#errs = pd.DataFrame(errs)
 
-vals, errs = toy_data_observables()
-vals = pd.DataFrame(vals)
-errs = pd.DataFrame(errs)
-
-#labels = np.array(['afb', 'fl from ctl', 'fl from ctk', 's3', 's4', 's5', 's7', 's8', 's9'])
-#vals.to_csv('toy_data_observable_values.csv', header = labels, index = True)
-#errs.to_csv('toy_data_observable_errors.csv', header = labels, index = True)
+labels = np.array(['afb', 'fl from ctl', 'fl from ctk', 's3', 's4', 's5', 's7', 's8', 's9'])
+vals.to_csv('proj_observable_values.csv', header = labels, index = True)
+errs.to_csv('proj_observable_errors.csv', header = labels, index = True)

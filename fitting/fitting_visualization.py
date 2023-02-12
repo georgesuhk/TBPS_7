@@ -163,7 +163,7 @@ def plot_toy_data_observables():
             ax[int((i-1)/4)][(i-1)%4].errorbar(range(len(fit.bins)), vals[:,i], xerr = np.array([.5 for n in range(len(fit.bins))]), yerr = errs[:,i], fmt = 'x', capsize = 4)
             ax[int((i-1)/4)][(i-1)%4].set_xlabel('Bin number')
 
-def plot_multiD_observables(vals, errs):
+def plot_multiD_observables(vals, errs, bin_ranges):
     fig, ax = plt.subplots(2, 4)
     ax[0][0].set_title(r'$A_{FB}$')
     ax[0][1].set_title(r'$F_L$')
@@ -173,7 +173,8 @@ def plot_multiD_observables(vals, errs):
     ax[1][1].set_title(r'$S_7$')
     ax[1][2].set_title(r'$S_8$')
     ax[1][3].set_title(r'$S_9$')
-
+    bin_centers = np.array([(bin_range[1] + bin_range[0])/2 for bin_range in bin_ranges])
+    bin_widths = np.array([(bin_range[1] - bin_range[0])/2 for bin_range in bin_ranges])
     for i in range(8):
-        ax[int(i/4)][int(i%4)].errorbar(range(7), vals[:,i], xerr = np.array([.5 for n in range(7)]), yerr = errs[:,i], fmt = 'x', capsize = 4)
-        ax[int(i/4)][int(i%4)].set_xlabel('Bin number')
+        ax[int(i/4)][int(i%4)].errorbar(bin_centers, vals[:,i], xerr = bin_widths, yerr = errs[:,i], fmt = 'x', capsize = 4)
+        ax[int(i/4)][int(i%4)].set_xlabel(r'$q^2$')
