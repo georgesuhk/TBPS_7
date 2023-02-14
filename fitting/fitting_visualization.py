@@ -9,6 +9,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import fitting_functions as fit
 from matplotlib import rcParams
+from matplotlib.patches import Rectangle
+from matplotlib.collections import PatchCollection
 
 rcParams.update({'font.size':22})
 
@@ -163,7 +165,19 @@ def plot_toy_data_observables():
             ax[int((i-1)/4)][(i-1)%4].errorbar(range(len(fit.bins)), vals[:,i], xerr = np.array([.5 for n in range(len(fit.bins))]), yerr = errs[:,i], fmt = 'x', capsize = 4)
             ax[int((i-1)/4)][(i-1)%4].set_xlabel('Bin number')
 
-def plot_multiD_observables(vals, errs, bin_ranges):
+    
+def plot_predictions(path, bin_ranges, ax):
+    SM_vals = np.loadtxt(f'{path}/expected_observable_values.csv', delimiter = ',', skiprows = 1)[:,1:]
+    SM_errs = np.loadtxt(f'{path}/expected_observable_errors.csv', delimiter = ',', skiprows = 1)[:,1:]
+    for i in range(8):
+        vals = SM_vals[:,i]
+        errs = SM_errs[:,i]
+        rectangles = [Rectangle((bin_range[0], vals[n] - errs[n]), bin_range[1] - bin_range[0], 2*errs[n]) for n, bin_range in enumerate(bin_ranges)]
+        pc = PatchCollection(rectangles, facecolor = 'xkcd:powder blue')
+        ax[int(i/4)][int(i%4)].add_collection(pc)
+        
+        
+def plot_real_observables(vals, errs, bin_ranges):
     fig, ax = plt.subplots(2, 4)
     ax[0][0].set_title(r'$A_{FB}$')
     ax[0][1].set_title(r'$F_L$')
@@ -175,6 +189,32 @@ def plot_multiD_observables(vals, errs, bin_ranges):
     ax[1][3].set_title(r'$S_9$')
     bin_centers = np.array([(bin_range[1] + bin_range[0])/2 for bin_range in bin_ranges])
     bin_widths = np.array([(bin_range[1] - bin_range[0])/2 for bin_range in bin_ranges])
+    plot_predictions('C:/Users/victo/TBPS_7/Data', bin_ranges, ax)
     for i in range(8):
-        ax[int(i/4)][int(i%4)].errorbar(bin_centers, vals[:,i], xerr = bin_widths, yerr = errs[:,i], fmt = 'x', capsize = 4)
+        ax[int(i/4)][int(i%4)].errorbar(bin_centers, vals[:,i], xerr = bin_widths, yerr = errs[:,i], fmt = 'o', capsize = 4, capthick=2, color = 'xkcd:coral', ecolor = 'xkcd:cobalt', elinewidth=2)
         ax[int(i/4)][int(i%4)].set_xlabel(r'$q^2$')
+        ax[int(i/4)][int(i%4)].grid()
+
+def plot_real_observables_proj(bin_ranges):
+    vals, errs = fit.real_data_observables()
+    fig, ax = plt.subplots(2, 4)
+    ax[0][0].set_title(r'$A_{FB}$')
+    ax[0][1].set_title(r'$F_L$')
+    ax[0][2].set_title(r'$S_3$')
+    ax[0][3].set_title(r'$S_4$')
+    ax[1][0].set_title(r'$S_5$')
+    ax[1][1].set_title(r'$S_7$')
+    ax[1][2].set_title(r'$S_8$')
+    ax[1][3].set_title(r'$S_9$')
+    bin_centers = np.array([(bin_range[1] + bin_range[0])/2 for bin_range in bin_ranges])
+    bin_widths = np.array([(bin_range[1] - bin_range[0])/2 for bin_range in bin_ranges])
+    plot_predictions('C:/Users/victo/TBPS_7/Data', bin_ranges, ax)
+    for i in range(9):
+        if i == 2:
+            ax[0][1].errorbar(bin_centers, vals[:,i], xerr = bin_widths, yerr = errs[:,i], fmt = 'o', capsize = 4, capthick=2, color = 'xkcd:coral', ecolor = 'xkcd:burnt sienna', elinewidth=2)
+        elif i < 2:
+            ax[0][i].errorbar(bin_centers, vals[:,i], xerr = bin_widths, yerr = errs[:,i], fmt = 'o', capsize = 4, capthick=2, color = 'xkcd:coral', ecolor = 'xkcd:cobalt', elinewidth=2)
+            ax[0][i].set_xlabel('Bin number')
+        elif i > 2:
+            ax[int((i-1)/4)][(i-1)%4].errorbar(bin_centers, vals[:,i], xerr = bin_widths, yerr = errs[:,i], fmt = 'o', capsize = 4, capthick=2, color = 'xkcd:coral', ecolor = 'xkcd:cobalt', elinewidth=2)
+            ax[int((i-1)/4)][(i-1)%4].set_xlabel(r'$q^2$')
