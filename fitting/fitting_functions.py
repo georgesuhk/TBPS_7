@@ -9,18 +9,33 @@ import numpy as np
 import pandas as pd
 import iminuit
 import copy
+import efficiency_fit as acc
 
-data_path = 'C:/Users/victo/ic-teach-kstmumu-public/kstarmumu_toy_data/'
+
 #remember to have the correct path for this part
 #currently accessing toy data
-files = [f'{data_path}toy_data_bin_{i}.csv' for i in range(7)]
-bins = [pd.read_csv(file) for file in files]
+data = pd.read_csv('cleaned_total_dataset.csv')
+bin_ranges = [[.1, .98],
+              [1.1, 2.5],
+              [2.5, 4.0],
+              [4.0, 6.0],
+              [6.0, 8.0],
+              [15., 17.],
+              [17., 19.],
+              [11., 12.5],
+              [1.0, 6.0],
+              [15., 19.]]
 
+#bin the data
 
+def q2_binning_sm(data, bin_ranges):
+    return [data[(data['q2'] >= bin_range[0]) & (data['q2'] <= bin_range[1])] for bin_range in bin_ranges]
+
+bins = q2_binning_sm(data, bin_ranges)
 
 #Probability distributions to fit to the data
   
-def pdf_ctk(cos_theta_k, afb=0, fl=0, s3=0, s9=0):
+def pdf_ctk(cos_theta_k, afb=0, fl=0, s3=0, s9=0, _bin=0):
     '''
     The projection of the pdf onto cos(theta_k) 
     
@@ -32,13 +47,14 @@ def pdf_ctk(cos_theta_k, afb=0, fl=0, s3=0, s9=0):
     
     Returns: d2gamma_P/dq^2dcos(theta_k)
     '''
-    acceptance = 0.5 # placeholder acceptance!!!
+    acceptance = acc.n6_polynomial(cos_theta_k, *acc.popt_costhetak_ls[_bin])
     scalar_array = (3/4) * ((1-fl)*(1-cos_theta_k**2) + 2 * fl * cos_theta_k**2) * acceptance
-    normalized_scalar_array = scalar_array *2 # normalizes the pdf
+    #todo: rescale properly after acceptance - if we can find the normalization for the acceptance function in acc one time that would be great
+    normalized_scalar_array = scalar_array # normalize the pdf here
     return np.abs(normalized_scalar_array) # returning absolute value to prevent negative values in the log-likelihood sum
 
 
-def pdf_ctl(cos_theta_l, afb=0, fl=0, s3=0, s9=0):
+def pdf_ctl(cos_theta_l, afb=0, fl=0, s3=0, s9=0, _bin=0):
     '''
     The projection of the pdf onto cos(theta_l)
     
@@ -53,12 +69,12 @@ def pdf_ctl(cos_theta_l, afb=0, fl=0, s3=0, s9=0):
     '''
     ctl = cos_theta_l
     c2tl = 2 * ctl ** 2 - 1
-    acceptance = 0.5  # acceptance "function"
+    acceptance = acc.n6_polynomial_even(ctl, *acc.popt_costhetal_ls[_bin])
     scalar_array = 3/8 * (3/2 - 1/2 * fl + 1/2 * c2tl * (1 - 3 * fl) + 8/3 * afb * ctl) * acceptance
-    normalized_scalar_array = scalar_array * 2 # normalising scalar array to account for the non-unity acceptance function
+    normalized_scalar_array = scalar_array # normalize the pdf here
     return np.abs(normalized_scalar_array) # returning absolute value to prevent negative values in the log-likelihood sum
 
-def pdf_phi(phi, afb=0, fl=0, s3=0, s9=0):
+def pdf_phi(phi, afb=0, fl=0, s3=0, s9=0, _bin=0):
     '''
     The projection of the pdf onto Phi
     
@@ -71,12 +87,12 @@ def pdf_phi(phi, afb=0, fl=0, s3=0, s9=0):
     
     Returns: d2gamma_P/dq^2dPhi
     '''
-    acceptance = 0.5 # placeholder acceptance!!!
+    acceptance = acc.n6_polynomial_even(phi, *acc.popt_phi_ls[_bin])
     scalar_array = (1/np.pi) * (1 + s3*(2 * np.cos(phi)**2 - 1) + s9*2*np.sin(phi)*np.cos(phi)) * acceptance
-    normalized_scalar_array = scalar_array * 2 # normalizes the pdf
+    normalized_scalar_array = scalar_array # normalize the pdf here
     return np.abs(normalized_scalar_array) # returning absolute value to prevent negative values in the log-likelihood sum
 
-def pdf_S(cos_theta_l, cos_theta_k, phi, *params):
+def pdf_S(cos_theta_l, cos_theta_k, phi, _bin, S_index, *params):
     '''
     The pdf across all angular axes in terms of a single S observable.
     Angles should be remapped accordingly.
@@ -85,22 +101,45 @@ def pdf_S(cos_theta_l, cos_theta_k, phi, *params):
         cos_theta_l : remapped cos(theta_l)
         cos_theta_k : remapped cos(theta_k)
         phi : remapped phi angle
+        _bin : the bin for which to calculate acceptance
+        S_index : the index of the S observable
         *params : S_i, F_l, A_T2 in that order, where i specifies the index of the S observable
 
     Returns: d4(gamma + gamma_bar)/...
 
     '''
-    ctl = cos_theta_l
-    ctk = cos_theta_k
-    c2tl = np.sqrt((ctl**2 + 1) / 2) # cos(2theta_l)
+    ctl = copy.deepcopy(cos_theta_l)
+    ctk = copy.deepcopy(cos_theta_k)
+    phi_old = copy.deepcopy(phi)
+    
+    if type(S_index) != int:
+        raise TypeError('index of S observable must be an integer of value 4, 5, 7, or 8')
+    
+    if S_index == 4:
+        ctl, ctk, phi = S4_angles(ctl, ctk, phi)
+    elif S_index == 5:
+        ctl, ctk, phi = S5_angles(ctl, ctk, phi)
+    elif S_index == 7:
+        ctl, ctk, phi = S7_angles(ctl, ctk, phi)
+    elif S_index == 8:
+        ctl, ctk, phi = S8_angles(ctl, ctk, phi)
+        
+    else:
+        raise ValueError('index of S observable must be an integer of value, 4, 5, 7, or 8')
+    
+    
+    c2tl = 2 * ctl ** 2 - 1 # cos(2theta_l)
     stl2 = 1-(ctl**2) # sin^2(theta_l)
     stl = np.sqrt(stl2) # sin(theta_l)
     stk2 = 1-(ctk**2) # sin^2(theta_k)
     s2tl = 2*ctl*stl # sin(2theta_l)
     s2tk = 2*ctk*np.sqrt(stk2) # sin(2theta_k)
     
+    acceptance = acc.n6_polynomial(cos_theta_k, *acc.popt_costhetak_ls[_bin]) * acc.n6_polynomial_even(cos_theta_l, *acc.popt_costhetal_ls[_bin]) * acc.n6_polynomial_even(phi_old, *acc.popt_phi_ls[_bin])
+    #using non-remapped angles for acceptance
+    #todo: normalize after acceptance
+    
     S_i, F_l, A_T2 = params
-    acceptance = 0.5
     Fl_term1 = (3/4) * (1 - F_l) * stk2
     Fl_term2 = F_l * ctk**2
     Fl_term3 = (1/4) * (1 - F_l) * stk2 * c2tl
@@ -110,9 +149,9 @@ def pdf_S(cos_theta_l, cos_theta_k, phi, *params):
     
     scalar_array = (9/(8*np.pi)) * (Fl_term1 + Fl_term2 + Fl_term3 + Fl_term4 + A_T2_term + S_i_term)
     scalar_array *= acceptance
-    scalar_array *= 2 # normalization after acceptance
+    normalized_scalar_array = scalar_array # normalization after acceptance here
     
-    return np.abs(scalar_array)
+    return np.abs(normalized_scalar_array)
     
 
 #functions for wrapping angles to input into pdf_S and finding the observables S4 through S8
@@ -198,7 +237,7 @@ def log_likelihood(pdf, afb=0, fl=0, s3=0, s9=0, _bin=0):
     elif pdf == pdf_phi:
         angular_data = bins[_bin]['phi']
     
-    normalized_scalar_array = pdf(angular_data, fl=fl, afb=afb, s3=s3, s9=s9)
+    normalized_scalar_array = pdf(angular_data, _bin=_bin, fl=fl, afb=afb, s3=s3, s9=s9)
     return - np.sum(np.log(normalized_scalar_array))
 
 def log_likelihood_S(S_index, _bin, *params):
@@ -216,23 +255,7 @@ def log_likelihood_S(S_index, _bin, *params):
     ctk = np.array(bins[_bin]['ctk'])
     phi = np.array(bins[_bin]['phi'])
     
-    
-    if type(S_index) != int:
-        raise TypeError('index of S observable must be an integer of value 4, 5, 7, or 8')
-    
-    if S_index == 4:
-        ctl, ctk, phi = S4_angles(ctl, ctk, phi)
-    elif S_index == 5:
-        ctl, ctk, phi = S5_angles(ctl, ctk, phi)
-    elif S_index == 7:
-        ctl, ctk, phi = S7_angles(ctl, ctk, phi)
-    elif S_index == 8:
-        ctl, ctk, phi = S8_angles(ctl, ctk, phi)
-        
-    else:
-        raise ValueError('index of S observable must be an integer of value, 4, 5, 7, or 8')
-    
-    normalized_scalar_array = pdf_S(ctl, ctk, phi, *params)
+    normalized_scalar_array = pdf_S(ctl, ctk, phi, _bin, S_index, *params)
     return -np.sum(np.log(normalized_scalar_array))
 
 # function for minimizing the log likelihood
@@ -348,14 +371,68 @@ def toy_data_observables():
     
     return np.array(values), np.array(errors)
 
+def real_data_observables():
+    '''
+    A function to calculate all observables from the projected pdf fits for the toy data
+    
+    Returns the values of the observables and their errors as two separate arrays
+    The order of the bins is preserved in the array
+    '''
+    values = []
+    errors = []
+    for i, _bin in enumerate(bins):
+        m_ctl = minimize_logL(pdf_ctl, i)
+        print(f'ctl minimum is valid: {m_ctl.fmin.is_valid}')
+        m_ctk = minimize_logL(pdf_ctk, i, fl = .5) # initial guess is important here
+        print(f'ctk minimum is valid: {m_ctk.fmin.is_valid}')
+        m_phi = minimize_logL(pdf_phi, i)
+        print(f'phi minimum is valid: {m_phi.fmin.is_valid}')
+        
+        m_S4 = minimize_logL(pdf_S, i, fl=m_ctl.values[1], S_index = 4)
+        print(f'bin {i} S4 minimum is valid: {m_S4.fmin.is_valid}')
+        m_S5 = minimize_logL(pdf_S, i, fl=m_ctl.values[1], S_index = 5)
+        print(f'bin {i} S5 minimum is valid: {m_S5.fmin.is_valid}')
+        m_S7 = minimize_logL(pdf_S, i, fl=m_ctl.values[1], S_index = 7)
+        print(f'bin {i} S7 minimum is valid: {m_S7.fmin.is_valid}')
+        m_S8 = minimize_logL(pdf_S, i, fl=m_ctl.values[1], S_index = 8)
+        print(f'bin {i} S8 minimum is valid: {m_S8.fmin.is_valid}')
+        
+        afb_val = m_ctl.values[0]
+        afb_err = m_ctl.errors[0]
+        fl_ctl_val = m_ctl.values[1]
+        fl_ctl_err = m_ctl.errors[1]
+        
+        fl_ctk_val = m_ctk.values[0]
+        fl_ctk_err = m_ctk.errors[0]
+        
+        s3_val = m_phi.values[0]
+        s3_err = m_phi.errors[0]
+        s9_val = m_phi.values[1]
+        s9_err = m_phi.errors[1]
+        
+        s4_val = m_S4.values[0]
+        s4_err = m_S4.errors[0]
+        
+        s5_val = m_S5.values[0]
+        s5_err = m_S5.errors[0]
+        
+        s7_val = m_S7.values[0]
+        s7_err = m_S7.errors[0]
+        
+        s8_val = m_S8.values[0]
+        s8_err = m_S8.errors[0]
+        
+        values.append([afb_val, fl_ctl_val, fl_ctk_val, s3_val, s4_val, s5_val, s7_val, s8_val, s9_val])
+        errors.append([afb_err, fl_ctl_err, fl_ctk_err, s3_err, s4_err, s5_err, s7_err, s8_err, s9_err])
+    
+    return np.array(values), np.array(errors)
 
+#code to generate and save observable values and errors
 
-#code to generate and save toy data observable values and errors
+vals, errs = real_data_observables()
+#vals = pd.DataFrame(vals)
+#errs = pd.DataFrame(errs)
 
-vals, errs = toy_data_observables()
-vals = pd.DataFrame(vals)
-errs = pd.DataFrame(errs)
-
-#labels = np.array(['afb', 'fl from ctl', 'fl from ctk', 's3', 's4', 's5', 's7', 's8', 's9'])
-#vals.to_csv('toy_data_observable_values.csv', header = labels, index = True)
-#errs.to_csv('toy_data_observable_errors.csv', header = labels, index = True)
+labels = np.array(['afb', 'fl from ctl', 'fl from ctk', 's3', 's4', 's5', 's7', 's8', 's9'])
+vals.to_csv('proj_observable_values.csv', header = labels, index = True)
+errs.to_csv('proj_observable_errors.csv', header = labels, index = True)

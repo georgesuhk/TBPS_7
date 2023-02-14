@@ -11,11 +11,11 @@ import warnings
 warnings.filterwarnings("ignore")
 #%%
 # import data
-data = pd.read_csv('acceptance_mc.csv')
+data = pd.read_csv('cleaned_acceptance.csv')
 data = data.dropna()
 # data = data[data['q2'] <= 18]
 #%%
-maxq2 = max(data['q2'])
+maxq2 = np.max(data['q2'])
 
 def preprocess_jit(data):
     """Pre-processes the pandas data-frame by scaling the nessecary columns and converting
@@ -42,23 +42,23 @@ def manual_legendre(n, x):
     #need to manually define legendre polynomials as numba doesn't understand scipy
     #its also much faster to use explicit equation rather than general formula
     if n == 0:
-        return 1
+        return x/x
     elif n == 1:
         return x
     elif n == 2:
-        return (1/2)*(3*x**2 - 1)
+        return (1/2)*(3*x**2 - 1.)
     elif n == 3:
         return (1/2)*(5*x**3 - 3*x)
     elif n == 4:
-        return (1/8)*(35*x**4 - 30*x**2 +3)
+        return (1/8)*(35*x**4 - 30*x**2 + 3.)
     elif n == 5:
         return (1/8)*(63*x**5 - 70*x**3 + 15*x)
     elif n == 6:
-        return (1/16)*(231*x**6 - 315*x**4 + 105*x**2 -5)
+        return (1/16)*(231*x**6 - 315*x**4 + 105*x**2 - 5.)
     elif n == 7:
         return (1/16)*(429*x**7 - 693*x**5 + 315*x**3 - 35*x)
     elif n == 8:
-        return (1/128)*(6435*x**8 - 12012*x**6 + 6930*x**4 - 1260*x**2 + 35)
+        return (1/128)*(6435*x**8 - 12012*x**6 + 6930*x**4 - 1260*x**2 + 35.)
 
 @jit(nopython=True)
 def get_efficiency_coeff_kress(costhetal_ls, costhetak_ls, phi_ls, q2_ls, i_max=5, j_max=5, m_max=5, n_max=5, mode='total_unweighted'):
@@ -103,9 +103,9 @@ def get_efficiency_coeff_kress(costhetal_ls, costhetak_ls, phi_ls, q2_ls, i_max=
                         iterations += 1
             # print(f'Obtained {iterations}/{total_iterations} Coefficients.')
                             
-        return c_coeff
+        return np.array(c_coeff)
 
-@jit(nopython=True)
+#@jit(nopython=True)
 def get_efficiency_kress(costhetal, costhetak, phi, q2, coeff_ls, i_max=5, j_max=5, m_max=5, n_max=5):
     """A function of four variables: costhetal, costhetak, phi, and q2, which outputs a single scalar for the effiency at that point.
     For this to work, coeff_ls must be generated using get_efficiency_coeff_kress, using the same values of i,j,m,n_max
@@ -133,7 +133,7 @@ def get_efficiency_kress(costhetal, costhetak, phi, q2, coeff_ls, i_max=5, j_max
     q2 = (q2-maxq2/2)/(maxq2/2)
     
     c_ls_pos = 0
-    total_efficiency = 0
+    total_efficiency = np.zeros(np.shape(costhetal))
 
     
     for i in range(0, i_max):
@@ -141,7 +141,7 @@ def get_efficiency_kress(costhetal, costhetak, phi, q2, coeff_ls, i_max=5, j_max
             for m in range(0, m_max):
                 for n in range(0, n_max):
                     user_input_legendre_terms = manual_legendre(i,costhetal)*manual_legendre(j,costhetak)*manual_legendre(m,phi)*manual_legendre(n,q2)
-                    total_efficiency += coeff_ls[c_ls_pos]*user_input_legendre_terms
+                    total_efficiency += (coeff_ls[c_ls_pos]*user_input_legendre_terms)
                     c_ls_pos += 1
     return total_efficiency
 
@@ -231,3 +231,6 @@ def relative_histogram_generator(data, num_datapoints=100):
     
     return hist, bin_locations
 #%%
+
+vals = preprocess_jit(data)
+coeffs = get_efficiency_coeff_kress(*vals)
