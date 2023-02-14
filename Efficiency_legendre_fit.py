@@ -13,7 +13,7 @@ warnings.filterwarnings("ignore")
 # import data
 data = pd.read_csv('acceptance_mc.csv')
 data = data.dropna()
-data = data[data['q2'] <= 18]
+# data = data[data['q2'] <= 18]
 #%%
 maxq2 = max(data['q2'])
 
@@ -164,6 +164,52 @@ def effiency_costhetal(costhetal_ls, func, func_params, costhetak_lim, phi_lim, 
             for j in range(1, N_phi-1):
                 for k in range(1, N_q2-1):
                     integral += func(costhetal, x_ls[i], y_ls[j], z_ls[k], *func_params)
+        integral = integral*hx*hy*hz
+        output.append(integral)
+    return output
+
+@jit(nopython=True)
+def effiency_costhetak(costhetak_ls, func, func_params, costhetal_lim, phi_lim, q2_lim, N_costhetal, N_phi, N_q2):
+    hx = (costhetal_lim[1]-costhetal_lim[0])
+    hx = hx/N_costhetal
+    hy = (phi_lim[1]-phi_lim[0])
+    hy = hy/N_phi
+    hz = (q2_lim[1]-q2_lim[0])
+    hz = hz/N_q2
+    x_ls = np.linspace(costhetal_lim[0], costhetal_lim[1], N_costhetal)
+    y_ls = np.linspace(phi_lim[0], phi_lim[1], N_phi)
+    z_ls = np.linspace(q2_lim[0], q2_lim[1], N_q2)
+
+    output = []
+    for costhetak in costhetak_ls:
+        integral = 0
+        for i in range(1, N_costhetal-1):
+            for j in range(1, N_phi-1):
+                for k in range(1, N_q2-1):
+                    integral += func(x_ls[i], costhetak, y_ls[j], z_ls[k], *func_params)
+        integral = integral*hx*hy*hz
+        output.append(integral)
+    return output
+
+@jit(nopython=True)
+def effiency_phi(phi_ls, func, func_params, costhetal_lim, costhetak_lim, q2_lim, N_costhetal, N_costhetak, N_q2):
+    hx = (costhetal_lim[1]-costhetal_lim[0])
+    hx = hx/N_costhetal
+    hy = (costhetak_lim[1]-costhetak_lim[0])
+    hy = hy/N_costhetak
+    hz = (q2_lim[1]-q2_lim[0])
+    hz = hz/N_q2
+    x_ls = np.linspace(costhetal_lim[0], costhetal_lim[1], N_costhetal)
+    y_ls = np.linspace(costhetak_lim[0], costhetak_lim[1], N_costhetak)
+    z_ls = np.linspace(q2_lim[0], q2_lim[1], N_q2)
+
+    output = []
+    for phi in phi_ls:
+        integral = 0
+        for i in range(1, N_costhetal-1):
+            for j in range(1, N_costhetak-1):
+                for k in range(1, N_q2-1):
+                    integral += func(x_ls[i], y_ls[i], phi, z_ls[k], *func_params)
         integral = integral*hx*hy*hz
         output.append(integral)
     return output
