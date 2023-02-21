@@ -1,0 +1,26 @@
+Number of total non-combinatorial background events: 238780
+Number of total combinatorial background events: 63757
+Number of sig events before comb removal: 8196
+Number of sig events after comb removal: 3211
+Number of jpsi events before comb removal: 215166
+Number of jpsi events after comb removal: 194332
+Number of psi2S events before comb removal: 43783
+Number of psi2S events after comb removal: 38665
+Number of jpsi_mu_k_swap events before comb removal: 443
+Number of jpsi_mu_k_swap events after comb removal: 75
+Number of jpsi_mu_pi_swap events before comb removal: 487
+Number of jpsi_mu_pi_swap events after comb removal: 282
+Number of phimumu events before comb removal: 4418
+Number of phimumu events after comb removal: 952
+Number of Kmumu events before comb removal: 15408
+Number of Kmumu events after comb removal: 65
+Number of pKmumu_piTop events before comb removal: 590
+Number of pKmumu_piTop events after comb removal: 96
+Number of pKmumu_piTok_kTop events before comb removal: 421
+Number of pKmumu_piTok_kTop events after comb removal: 54
+Number of k_pi_swap events before comb removal: 8373
+Number of k_pi_swap events after comb removal: 697
+Number of Kstarp_pi0 events before comb removal: 3624
+Number of Kstarp_pi0 events after comb removal: 53
+Number of Jpsi_Kstarp_pi0 events before comb removal: 1628
+Number of Jpsi_Kstarp_pi0 events after comb removal: 298
