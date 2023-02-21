@@ -48,7 +48,7 @@ def acceptance_kress(costhetal, costhetak, phi, q2, i_max=5, j_max=6, m_max=5, n
     eff = []
     for param in params:
         eff.append(get_efficiency_kress(costhetal=costhetal, costhetak=costhetak, phi=phi, q2=q2, coeff_ls=param, i_max=i_max, j_max=j_max, m_max=m_max, n_max=n_max))
-    print(eff)
+    #print(eff)
     error = stats.stdev(eff)
    
     return efficiency, error
