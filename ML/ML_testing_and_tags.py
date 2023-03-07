@@ -10,7 +10,7 @@ if __name__ == '__main__':
     # NOTE: only change the values of variables in CAPS when using!
     # setup
     EXPERIMENT = "acceptance_mc.pkl"
-    COMBINATORIAL_THRESHOLD = 0.995
+    COMBINATORIAL_THRESHOLD = 0.95
     save_folder_name = "ML_results_combThresh" + str(COMBINATORIAL_THRESHOLD) \
                        + "_" + EXPERIMENT[:-4]
     tags_write_file = "ML_tags_combThresh" + str(COMBINATORIAL_THRESHOLD) \

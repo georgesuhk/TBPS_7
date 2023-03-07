@@ -1,26 +1,26 @@
-Number of total non-combinatorial background events: 806030
-Number of total combinatorial background events: 70340
+Number of total non-combinatorial background events: 806448
+Number of total combinatorial background events: 69922
 Number of sig events before comb removal: 811854
-Number of sig events after comb removal: 745044
+Number of sig events after comb removal: 745407
 Number of jpsi events before comb removal: 25535
-Number of jpsi events after comb removal: 25197
+Number of jpsi events after comb removal: 25206
 Number of psi2S events before comb removal: 23251
-Number of psi2S events after comb removal: 22945
+Number of psi2S events after comb removal: 22976
 Number of jpsi_mu_k_swap events before comb removal: 103
-Number of jpsi_mu_k_swap events after comb removal: 80
+Number of jpsi_mu_k_swap events after comb removal: 84
 Number of jpsi_mu_pi_swap events before comb removal: 231
-Number of jpsi_mu_pi_swap events after comb removal: 223
+Number of jpsi_mu_pi_swap events after comb removal: 226
 Number of phimumu events before comb removal: 2726
-Number of phimumu events after comb removal: 2587
+Number of phimumu events after comb removal: 2592
 Number of Kmumu events before comb removal: 823
-Number of Kmumu events after comb removal: 129
+Number of Kmumu events after comb removal: 112
 Number of pKmumu_piTop events before comb removal: 850
-Number of pKmumu_piTop events after comb removal: 752
+Number of pKmumu_piTop events after comb removal: 760
 Number of pKmumu_piTok_kTop events before comb removal: 449
-Number of pKmumu_piTok_kTop events after comb removal: 392
+Number of pKmumu_piTok_kTop events after comb removal: 387
 Number of k_pi_swap events before comb removal: 9041
-Number of k_pi_swap events after comb removal: 8474
+Number of k_pi_swap events after comb removal: 8498
 Number of Kstarp_pi0 events before comb removal: 1493
-Number of Kstarp_pi0 events after comb removal: 200
+Number of Kstarp_pi0 events after comb removal: 194
 Number of Jpsi_Kstarp_pi0 events before comb removal: 14
-Number of Jpsi_Kstarp_pi0 events after comb removal: 7
+Number of Jpsi_Kstarp_pi0 events after comb removal: 6

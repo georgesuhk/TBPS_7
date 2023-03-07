@@ -77,7 +77,7 @@ if __name__ == '__main__':
     df.pop("Kstar_ENDVERTEX_CHI2")  # feature correlated to B0_M
 
     # Identify important features with ANOVA/SULOV
-    features, train_m = featurewiz(df, target="is_sig", corr_limit=0.7,
+    features, train_m = featurewiz(df, target="is_sig", corr_limit=0.9,
                                    verbose=2)
     # Model should not be skewed by B0_M
     reduced_df = df[features]  # delete redundant features
@@ -103,4 +103,4 @@ if __name__ == '__main__':
     print("Accuracy: {:.2f}%".format(accuracy))
 
     # Save model
-    model.save_model("comb_background_identifier_nest200_lrate0.25.json")
+    model.save_model("#2comb_background_identifier_nest200_lrate0.25.json")
