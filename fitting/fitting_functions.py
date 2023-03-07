@@ -373,7 +373,7 @@ def toy_data_observables():
 
 def real_data_observables():
     '''
-    A function to calculate all observables from the projected pdf fits for the toy data
+    A function to calculate all observables from the projected pdf fits for the real data
     
     Returns the values of the observables and their errors as two separate arrays
     The order of the bins is preserved in the array
@@ -433,6 +433,6 @@ vals, errs = real_data_observables()
 #vals = pd.DataFrame(vals)
 #errs = pd.DataFrame(errs)
 
-labels = np.array(['afb', 'fl from ctl', 'fl from ctk', 's3', 's4', 's5', 's7', 's8', 's9'])
-vals.to_csv('proj_observable_values.csv', header = labels, index = True)
-errs.to_csv('proj_observable_errors.csv', header = labels, index = True)
+#labels = np.array(['afb', 'fl from ctl', 'fl from ctk', 's3', 's4', 's5', 's7', 's8', 's9'])
+#vals.to_csv('proj_observable_values.csv', header = labels, index = True)
+#errs.to_csv('proj_observable_errors.csv', header = labels, index = True)
