@@ -139,8 +139,8 @@ def main():
         'J_psi_M'
     ]
     
-    df = load_file('total_dataset.csv')
-    filter_dataset(df)['is_signal_selection'].to_pickle('stripping_tags_all_models.pkl')
+    df = load_file('acceptance_mc.csv')
+    filter_dataset(df)['is_signal_selection'].to_csv('acceptance_post_stripping_cut.csv')
     
     #files = os.listdir('./data/')
     #list_of_ratios = [filter_dataset(load_file(file_name)) for file_name in tqdm(files)]
