@@ -11,8 +11,8 @@ def chisqr(obs, exp, error):
     return chisqr
 
 
-A_errs = np.loadtxt("A_errs.csv", delimiter=",", skiprows=1)
-A_vals = np.loadtxt("A_vals.csv", delimiter=",", skiprows=1)
+A_errs = np.loadtxt("A_errs2.csv", delimiter=",", skiprows=1)
+A_vals = np.loadtxt("A_vals2.csv", delimiter=",", skiprows=1)
 bin_ranges = [[.1, .98],
               [1.1, 2.5],
               [2.5, 4.0],
