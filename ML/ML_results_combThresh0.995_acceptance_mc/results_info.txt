@@ -1,5 +1,5 @@
 Number of total non-combinatorial background events: 675057
-Number of total combinatorial background events: 201311
+Number of total combinatorial background events: 195832
 Number of sig events before comb removal: 811854
 Number of sig events after comb removal: 619844
 Number of jpsi events before comb removal: 25535

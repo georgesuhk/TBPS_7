@@ -77,7 +77,7 @@ if __name__ == '__main__':
     df.pop("Kstar_ENDVERTEX_CHI2")  # feature correlated to B0_M
 
     # Identify important features with ANOVA/SULOV
-    features, train_m = featurewiz(df, target="is_sig", corr_limit=0.9,
+    features, train_m = featurewiz(df, target="is_sig", corr_limit=0.1,
                                    verbose=2)
     # Model should not be skewed by B0_M
     reduced_df = df[features]  # delete redundant features
