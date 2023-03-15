@@ -13,11 +13,7 @@ import matplotlib.pyplot as plt
 import iminuit
 from scipy.special import erf
 
-total_data = pd.read_csv('thresholds/comb_threshold0.995/cleaned_td__peak0.9.csv')[['B0_M', 'q2', 'costhetal', 'costhetak', 'phi']]
-mass_data = total_data[['B0_M', 'q2']]
-ang_data = total_data[['costhetal', 'costhetak', 'phi', 'q2']]
-ang_data = ang_data.rename(columns = {'costhetal': 'ctl'})
-ang_data = ang_data.rename(columns = {'costhetak': 'ctk'})
+
 
  
 bin_ranges = [[.1, .98],
@@ -39,25 +35,36 @@ def q2_binning_sm(data, bin_ranges):
 def q2_binning_ang(data, bin_ranges):
     return [data[(data['q2'] >= bin_range[0]) & (data['q2'] <= bin_range[1])][['ctl', 'ctk', 'phi']] for bin_range in bin_ranges]
 
-bins = q2_binning_sm(mass_data, bin_ranges)
-ang_bins = q2_binning_ang(ang_data, bin_ranges)
 
 def set_data(path):
     global mass_data
     global ang_data
     global bins
     global ang_bins
-    global param_bins
-    mass_data = pd.read_csv(path)[['B0_M', 'q2']]
-    ang_data = pd.read_csv(path)[['costhetal', 'costhetak', 'phi', 'q2']]
+    global bin_params
+    global bin_errs
+    total_data = pd.read_csv(path)[['B0_M', 'q2', 'costhetal', 'costhetak', 'phi']]
+    mass_data = total_data[['B0_M', 'q2']]
+    ang_data = total_data[['costhetal', 'costhetak', 'phi', 'q2']]
     ang_data = ang_data.rename(columns = {'costhetal': 'ctl'})
     ang_data = ang_data.rename(columns = {'costhetak': 'ctk'})
     bins = q2_binning_sm(mass_data, bin_ranges)
     ang_bins = q2_binning_ang(ang_data, bin_ranges)
-    param_bins = []
+    bin_params = []
+    bin_errs = []
     for _bin in range(len(bins)):
-        param_bins.append(find_background_params(_bin)[0])
+        p, e = find_background_params(_bin)
+        bin_params.append(p)
+        bin_errs.append(e)
         
+
+total_data = pd.read_csv('thresholds/comb_threshold0.995/cleaned_td__peak0.9.csv')[['B0_M', 'q2', 'costhetal', 'costhetak', 'phi']]
+mass_data = total_data[['B0_M', 'q2']]
+ang_data = total_data[['costhetal', 'costhetak', 'phi', 'q2']]
+ang_data = ang_data.rename(columns = {'costhetal': 'ctl'})
+ang_data = ang_data.rename(columns = {'costhetak': 'ctk'})
+bins = q2_binning_sm(mass_data, bin_ranges)
+ang_bins = q2_binning_ang(ang_data, bin_ranges)
 
 
 #mass distribution functions
@@ -149,13 +156,15 @@ def log_likelihood(dist, *params):
     Returns:
         scalar negative log-likelihood value
     '''
-    if len(params) < 8:
-        scalar_array = dist(np.array(data), *params) # use np.array(mass_data) because of jankiness between pandas and numpy
-    else:
+    if dist == bkg_dist or dist == bkg_dist_1st_order:
         ctl = np.array(ang_data['ctl'])
         ctk = np.array(ang_data['ctk'])
         phi = np.array(ang_data['phi'])
         scalar_array = dist(ctl, ctk, phi, *params)
+    else:
+        scalar_array = dist(np.array(data), *params) # use np.array(mass_data) because of jankiness between pandas and numpy
+   
+        
     return -np.sum(np.log(scalar_array))
 
 def minimize_logL(dist, initial_guess):
@@ -173,7 +182,10 @@ def minimize_logL(dist, initial_guess):
     if len(initial_guess) == 4:
         m.limits = [(5000, 5400), (0, 25), (0, 10), (0, 1000)]
     elif len(initial_guess) == 6:
-        m.limits = [(5000, 5400), (0, 25), (.1, 10), (1.001, 5), (0, 10), (0, 1000)]
+        if dist == bkg_dist_1st_order:
+            m.limits = [(0, 1), (-1, 1), (0, 1), (-1, 1), (0, 2), (-1/np.pi, 1/np.pi)]
+        elif dist == gaussian_bkg:
+            m.limits = [(5000, 5400), (0, 25), (.1, 10), (1.001, 5), (0, 10), (0, 1000)]
     else:
         m.limits = [(0, 1), (-2, 2), (-1, 2)] * 3
     m.migrad()
@@ -192,7 +204,7 @@ def mass_fit_gaussian(plotting = False):
         centers = 0.5*(edges[1] - edges[0]) + edges[:-1]
         ys = gaussian_bkg(centers, *m.values)
         check_params_plot(gaussian_bkg, m.values)
-        check_params_plot(gaussian_bkg, initial_guess)
+        #check_params_plot(gaussian_bkg, initial_guess)
     return np.array(m.values), np.array(m.errors)
 
 def mass_fit_crystal(plotting = False):
@@ -204,7 +216,7 @@ def mass_fit_crystal(plotting = False):
         centers = 0.5*(edges[1] - edges[0]) + edges[:-1]
         ys = crystal_ball_bkg(centers, *m.values)
         check_params_plot(crystal_ball_bkg, m.values)
-        check_params_plot(crystal_ball_bkg, initial_guess)
+        #check_params_plot(crystal_ball_bkg, initial_guess)
     return np.array(m.values), np.array(m.errors)
     
 
@@ -241,6 +253,38 @@ def bkg_dist(ctl, ctk, phi, c0_ctl, c1_ctl, c2_ctl, c0_ctk, c1_ctk, c2_ctk, c0_p
     phi_norm = (2/3)*c2_phi*np.pi**3 + 2*np.pi*c0_phi
     norm = ctl_norm*ctk_norm*phi_norm
     return ctl_terms*ctk_terms*phi_terms / norm
+
+def bkg_dist_errs(ctl, ctk, phi, vals, errs):
+    c0_ctl, c1_ctl, c2_ctl, c0_ctk, c1_ctk, c2_ctk, c0_phi, c1_phi, c2_phi = vals
+    c0_ctl_err, c1_ctl_err, c2_ctl_err, c0_ctk_err, c1_ctk_err, c2_ctk_err, c0_phi_err, c1_phi_err, c2_phi_err = errs
+    
+    ctl_terms = c0_ctl + c1_ctl*ctl + c2_ctl*ctl**2
+    ctk_terms = c0_ctk + c1_ctk*ctk + c2_ctk*ctk**2
+    phi_terms = c0_phi + c1_phi*phi + c2_phi*phi**2
+    
+    ctl_errs = np.sqrt(c0_ctl_err**2 + (ctl*c1_ctl_err)**2 + (ctl**2*c2_ctl_err)**2)
+    ctk_errs = np.sqrt(c0_ctk_err**2 + (ctk*c1_ctk_err)**2 + (ctk**2*c2_ctk_err)**2)
+    phi_errs = np.sqrt(c0_phi_err**2 + (phi*c1_phi_err)**2 + (phi**2*c2_phi_err)**2)
+    
+    ctl_norm = 2*c2_ctl/3 + 2*c0_ctl
+    ctk_norm = 2*c2_ctk/3 + 2*c0_ctk
+    phi_norm = (2/3)*c2_phi*np.pi**3 + 2*np.pi*c0_phi
+    norm = ctl_norm*ctk_norm*phi_norm
+    
+    variance = (ctl_errs*ctk_terms*phi_terms)**2 + (ctk_errs*ctl_terms*phi_terms)**2 + (phi_errs*ctk_terms*ctl_terms)**2
+    
+    return np.sqrt(variance)/norm
+    
+def bkg_dist_1st_order(ctl, ctk, phi, c0_ctl, c1_ctl, c0_ctk, c1_ctk, c0_phi, c1_phi):
+    ctl_terms = c0_ctl + c1_ctl*ctl
+    ctk_terms = c0_ctk + c1_ctk*ctk
+    phi_terms = c0_phi + c1_phi*phi
+    ctl_norm = 2*c0_ctl
+    ctk_norm = 2*c0_ctk
+    phi_norm = 2*np.pi*c0_phi
+    norm = ctl_norm*ctk_norm*phi_norm
+    return ctl_terms * ctk_terms * phi_terms / norm
+
     
 def find_background_params(_bin):
     global data
@@ -255,7 +299,7 @@ def find_background_params(_bin):
     sd = vals[1]
     sideband = ang_bins[_bin][(data > (mean + 2*sd))]
     data = sideband
-    initial_guess = [0.01]*9
+    initial_guess = [0.5, 0.2, 0.1]*3
     m = minimize_logL(bkg_dist, initial_guess)
     return np.array(m.values), np.array(m.errors)
     
