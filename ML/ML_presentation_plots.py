@@ -5,9 +5,7 @@ from background_identifier import load_path, files
 import matplotlib.patches as mpatches
 from matplotlib import ticker
 
-
 EXPERIMENT = "total_dataset.pkl"
-
 
 # load in models
 model_comb = XGBClassifier(n_estimators=200, learning_rate=0.25)
@@ -27,21 +25,17 @@ peaking_predictions = model_peaking.predict(df_peaking_reduced)
 peaking_predictions_proba = model_peaking.predict_proba(df_peaking_reduced)
 df["label_peaking"] = peaking_predictions
 
-
-
 # PLOT STUFF
 
 rcParams['savefig.bbox'] = 'tight'
-#rcParams['savefig.dpi'] = 1200
+# rcParams['savefig.dpi'] = 1200
 
-rcParams['savefig.transparent'] = True
-rcParams['figure.figsize'] = [16, 9]
 
 params = {
     'savefig.bbox': 'tight',
     'savefig.dpi': 1000,
     'savefig.transparent': True,
-    'figure.figsize': [18, 9],
+    'figure.figsize': [20, 9],
     "xtick.top": False,
     "ytick.right": True,
     "xtick.direction": "out",
@@ -60,7 +54,8 @@ plt.rcParams['font.family'] = "sans-serif"
 plt.rcParams['font.sans-serif'] = "Arial"
 plt.rcParams['font.size'] = 14
 plt.rcParams['axes.labelsize'] = 16
-#plt.rcParams['axes.labelweight'] = 'bold'
+plt.rcParams["text.latex.preamble"] = r"\usepackage{mathptmx}"
+# plt.rcParams['axes.labelweight'] = 'bold'
 plt.rcParams['xtick.labelsize'] = 14
 plt.rcParams['ytick.labelsize'] = 14
 plt.rcParams['legend.fontsize'] = 15
@@ -88,21 +83,21 @@ combinatorial_background = df[(df["label_comb"] < 0.75) &
 signal = df[(df["label_comb"] > 0.75) &
             (df["label_peaking"] == 0)]["B0_M"]
 jpsi = df[(df["label_comb"] > 0.75) &
-            (df["label_peaking"] == 1)]["B0_M"]
+          (df["label_peaking"] == 1)]["B0_M"]
 psi2s = df[(df["label_comb"] > 0.75) &
-            (df["label_peaking"] == 2)]["B0_M"]
+           (df["label_peaking"] == 2)]["B0_M"]
 jpsi_mu_k_swap = df[(df["label_comb"] > 0.75) &
-                (df["label_peaking"] == 3)]["B0_M"]
+                    (df["label_peaking"] == 3)]["B0_M"]
 jpsi_mu_pi_swap = df[(df["label_comb"] > 0.75) &
-                (df["label_peaking"] == 4)]["B0_M"]
+                     (df["label_peaking"] == 4)]["B0_M"]
 phimumu = df[(df["label_comb"] > 0.75) &
              (df["label_peaking"] == 5)]["B0_M"]
 Kmumu = df[(df["label_comb"] > 0.75) &
            (df["label_peaking"] == 6)]["B0_M"]
 pKmumu_piTop = df[(df["label_comb"] > 0.75) &
                   (df["label_peaking"] == 7)]["B0_M"]
-pKmumu_piTok_kTop =  df[(df["label_comb"] > 0.75) &
-                        (df["label_peaking"] == 8)]["B0_M"]
+pKmumu_piTok_kTop = df[(df["label_comb"] > 0.75) &
+                       (df["label_peaking"] == 8)]["B0_M"]
 k_pi_swap = df[(df["label_comb"] > 0.75) &
                (df["label_peaking"] == 9)]["B0_M"]
 Kstarp_pi0 = df[(df["label_comb"] > 0.75) &
@@ -121,7 +116,6 @@ ax1.hist(psi2s, bins=bins, color="#626262", alpha=1)
 ax1.hist(psi2s, bins=bins, lw=1, color="#626262",
          histtype="step")
 
-
 # These are in unitless percentages of the figure size. (0,0 is bottom left)
 left, bottom, width, height = [0.31, 0.23, 0.57, 0.62]
 ax2 = fig.add_axes([left, bottom, width, height])
@@ -134,7 +128,7 @@ ax1.hist(combinatorial_background, bins=bins, lw=2, color="#d62728",
          histtype="step")
 
 # k_pi_swap
-ax1.hist(k_pi_swap, bins=bins,color="#ffe338", alpha=alphas[1])
+ax1.hist(k_pi_swap, bins=bins, color="#ffe338", alpha=alphas[1])
 ax1.hist(k_pi_swap, bins=bins, lw=1,
          color="#ffe338", histtype="step")
 
@@ -188,7 +182,7 @@ ax2.hist(combinatorial_background, bins=bins, lw=2, color="#d62728",
          histtype="step")
 
 # k_pi_swap
-ax2.hist(k_pi_swap, bins=bins,color="#ffe338", alpha=alphas[1])
+ax2.hist(k_pi_swap, bins=bins, color="#ffe338", alpha=alphas[1])
 ax2.hist(k_pi_swap, bins=bins, lw=1,
          color="#ffe338", histtype="step", label="k_pi_swap")
 
@@ -239,9 +233,14 @@ ax2.hist(signal, bins=bins, lw=1.5,
 
 handles1, labels = ax1.get_legend_handles_labels()
 jpsi_patch = mpatches.Patch(facecolor="g", edgecolor="g", linewidth=1,
-                            label="Jpsi")
-psi2s_patch = mpatches.Patch(facecolor="#626262", edgecolor="#626262", linewidth=1,
-                            label="Psi2s")
+                            label=r"$B^{0} \rightarrow J/\psi K^{*},$"
+                                  "\n with "
+                                  r"$J/\psi \rightarrow \mu\mu$")
+psi2s_patch = mpatches.Patch(facecolor="#626262", edgecolor="#626262",
+                             linewidth=1, label=r"$B^{0} \rightarrow \psi (2S) "
+                                                r"K^{*0},$"
+                                                "\n with $\psi (2S)"
+                                                r" \rightarrow \mu\mu$")
 handles1.extend([jpsi_patch, psi2s_patch])
 
 handles2, labels = ax1.get_legend_handles_labels()
@@ -249,36 +248,64 @@ comb_patch = mpatches.Patch(facecolor="#FBE8E9", edgecolor="#d62728",
                             linewidth=2,
                             label="Combinatorial Background")
 sig_patch = mpatches.Patch(facecolor="#0072c6", edgecolor="k",
-                           linewidth=1.5, label="Signal")
+                           linewidth=1.5,
+                           label="Signal ({} events)".format(len(signal)))
 kmumu_patch = mpatches.Patch(facecolor="#800080", edgecolor="#800080",
-                        linewidth=1, label="Kmumu")
+                             linewidth=1,
+                             label=r"$B^{+} \rightarrow K^{+}\mu^{+}\mu^{-}$")
 jpsi_Kstarp_pi0_patch = mpatches.Patch(facecolor="#ff7f0e", edgecolor="#ff7f0e",
-                                       linewidth=1, label="Jpsi_Kstarp_pi0")
+                                       linewidth=1,
+                                       label=r"$B^{+} \rightarrow K^{"
+                                             r"*+}J/\psi$, with $K^{*+} "
+                                             r"\rightarrow K^{+}\pi^0$ and"
+                                             r" $J/\psi \rightarrow \mu\mu$")
 k_pi_swap_patch = mpatches.Patch(facecolor="#ffe338", edgecolor="#ffe338",
-                                 linewidth=1, label="K_pi_swap")
+                                 linewidth=1, label="Signal (kaon "
+                                                    "reconstructed as pion "
+                                                    "and vice versa)")
 phimumu_patch = mpatches.Patch(facecolor="#80b9c7", edgecolor="#80b9c7",
-                         linewidth=1, label="Phimumu")
+                               linewidth=1, label=r"$B^{0}_s \rightarrow \phi "
+                                                  r"\mu\mu$, with $\phi "
+                                                  r"\rightarrow KK$ (one of "
+                                                  r"the kaons recontructed"
+                                                  r" as pion)")
 Kstarp_pi0_patch = mpatches.Patch(facecolor="#34a4fd", edgecolor="#34a4fd",
-                                      linewidth=1, label="Kstarp_pi0")
+                                  linewidth=1,
+                                  label=r"$B^{+} \rightarrow K^{*+}\mu^{+}"
+                                        r"\mu^{-}$, with $K^{*+} \rightarrow "
+                                        r"K^{+}\pi^{0}$")
 jpsi_mu_k_swap_patch = mpatches.Patch(facecolor="#e377c2", edgecolor="#e377c2",
-                                      linewidth=1, label="Jpsi_mu_k_swap")
+                                      linewidth=1,
+                                      label=r"$B^{0} \rightarrow J/\psi K^{"
+                                            r"*0}$ (muon reconstructed as "
+                                            r"kaon and vice versa)")
 jpsi_mu_pi_swap_patch = mpatches.Patch(facecolor="#d4a4c4", edgecolor="#d4a4c4",
-                                       linewidth=1, label="Jpsi_mu_pi_swap")
+                                       linewidth=1,
+                                       label=r"$B^{0} \rightarrow J/\psi K^{"
+                                             r"*0}$ (muon reconstructed as "
+                                             r"pion and vice versa)")
 pKmumu_piTop_patch = mpatches.Patch(facecolor="#c1d43f", edgecolor="#c1d43f",
-                                    linewidth=1, label="pKmumu_piTop")
+                                    linewidth=1,
+                                    label=r"$\Lambda^0_b \rightarrow "
+                                          r"pK\mu\mu$ (proton "
+                                          r"reconstructed as pion")
 pKmumu_piTok_kTop_patch = mpatches.Patch(facecolor="#9edae5",
                                          edgecolor="#9edae5",
-                                         linewidth=1, label="pKmumu_piTok_kTop")
+                                         linewidth=1,
+                                         label=r"$\Lambda^0_b \rightarrow "
+                                               r"pK\mu\mu$ (proton "
+                                               r"reconstructed as kaon and "
+                                               r"kaon as pion)")
 handles2.extend([comb_patch, sig_patch, kmumu_patch,
                  jpsi_Kstarp_pi0_patch, k_pi_swap_patch,
-                 phimumu_patch, jpsi_mu_k_swap_patch,
+                 phimumu_patch, Kstarp_pi0_patch, jpsi_mu_k_swap_patch,
                  jpsi_mu_pi_swap_patch, pKmumu_piTop_patch,
                  pKmumu_piTok_kTop_patch])
 
-ax1.legend(loc="upper left", handles=handles1)
+ax1.legend(loc="upper left", handles=handles1, fontsize="small")
 ax2.legend(loc="upper right", handles=handles2)
-ax2.ticklabel_format(style='sci',scilimits=(0, 0), axis='y')
-ax1.ticklabel_format(style='sci',scilimits=(0, 0), axis='y')
+ax2.ticklabel_format(style='sci', scilimits=(0, 0), axis='y')
+ax1.ticklabel_format(style='sci', scilimits=(0, 0), axis='y')
 ax1.set_xlabel(r"$m(K^{+}\pi^{-}\mu^{+}\mu^{-})$   [MeV/c$^2}$]")
 ax2.set_xlabel(r"$m(K^{+}\pi^{-}\mu^{+}\mu^{-})$   [MeV/c$^2$]")
 ax2.set_ylabel("Number of Events")
@@ -287,5 +314,5 @@ ax1.xaxis.set_minor_locator(ticker.AutoMinorLocator())
 ax2.xaxis.set_minor_locator(ticker.AutoMinorLocator())
 ax1.yaxis.set_minor_locator(ticker.AutoMinorLocator())
 ax2.yaxis.set_minor_locator(ticker.AutoMinorLocator())
-#ax2.set_yscale("log")
+# ax2.set_yscale("log")
 plt.savefig("data_decomposition.png")
