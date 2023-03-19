@@ -39,7 +39,7 @@ for column in range(1, A_vals[0, :].shape[0]):
     p = 1 - scipy.stats.chi2.cdf(chi_sqr, degrees_of_freedom)
     print("Reduced Chi Squared for A_{} = {:.2f}".format(column + 2,
                                                          reduced_chi_sqr))
-    print("p value = {:.4f}".format(p))
+    print("p value = {:.4e}".format(p))
 
 # now calculate the p value fitting all points to linear regression
 all_vals = A_vals[:, 1:].flatten()
@@ -49,5 +49,5 @@ degrees_of_freedom = all_vals.shape[0] - 1
 reduced_chi_sqr = chi_sqr / degrees_of_freedom
 p = 1 - scipy.stats.chi2.cdf(chi_sqr, degrees_of_freedom)
 print("Reduced Chi Squared for all observ. = {:.2f}".format(reduced_chi_sqr))
-print("p value = {:.4f}".format(p))
+print("p value = {:.4e}".format(p))
 
